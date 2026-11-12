@@ -82,6 +82,7 @@ button.alt{font:inherit;font-weight:700;color:var(--ink);background:#fff;border:
 button.alt:hover{background:var(--tint);border-color:var(--red)}
 #report{margin:10px 0 0;padding:0;list-style:none;font-size:.92rem}
 #report li{padding:2px 0}#report .miss{color:var(--muted)}
+.faq{max-width:760px}
 </style>
 </head>
 <body>
@@ -128,6 +129,16 @@ button.alt:hover{background:var(--tint);border-color:var(--red)}
       </div></section>
     </div>
   </main>
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Where do I find the raw HTML code of my newsletter?</summary><div><p>In Sarbacane, use the option that shows the HTML code of your campaign, then select <strong>all</strong> of it and copy it. Paste it in step 1 exactly as it is, from the very beginning to the very end.</p></div></details>
+    <details><summary>It says “Nothing was changed”</summary><div><p>The page looks for four exact pieces of code and found none of them. Check that you pasted the complete raw code of a Sarbacane newsletter, not just a part of it or the visible text.</p></div></details>
+    <details><summary>It says only 2 or 3 of the 4 changes were applied</summary><div><p>Some pieces of code were not in your newsletter, so those changes were skipped. The list under the button shows which ones were applied (✓) and which were not found (–). Check the result before using it.</p></div></details>
+    <details><summary>Does it change my text or my images?</summary><div><p>No. It only makes the four changes listed under “What exactly does it change?”. Everything else stays as it is.</p></div></details>
+    <details><summary>What do I do with the cleaned code?</summary><div><p>Use it in place of the original code, wherever you would have pasted the original. The “Copy the cleaned code” button copies all of it at once.</p></div></details>
+    <details><summary>Is my code uploaded anywhere?</summary><div><p>No. Everything happens inside your browser and nothing is sent online.</p></div></details>
+  </section>
+
   <footer>Everything runs in your browser: your code is never uploaded anywhere.</footer>
 </div>
 <script>
