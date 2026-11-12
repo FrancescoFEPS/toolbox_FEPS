@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team toolbox</title>
+<link rel="icon" type="image/png" sizes="64x64" href="favicon/favicon.png">
+<meta name="description" content="Small online tools that save time on everyday tasks.">
+<style>
+:root{--bg:#f2f4f7;--surface:#fff;--ink:#14161b;--muted:#566070;--line:#d5dae1;--red:#c8102e;--red-dark:#9e0c24;--r:8px;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif}
+.topbar{height:8px;background:var(--red)}
+.wrap{max-width:1120px;margin:0 auto;padding:44px 24px 56px}
+h1{margin:0 0 10px;font-size:clamp(2.1rem,5vw,3.1rem);line-height:1.05;letter-spacing:-.025em;font-weight:800}
+.lede{margin:0 0 36px;max-width:56ch;font-size:1.2rem;line-height:1.4}
+.tools{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.tool{display:flex;flex-direction:column;gap:6px;padding:22px;background:var(--surface);border:1px solid var(--line);border-top:6px solid var(--red);border-radius:var(--r);color:inherit;text-decoration:none}
+.tool:hover{border-color:var(--red);box-shadow:0 14px 28px -18px rgba(20,22,27,.45)}
+.tool:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.tool h2{margin:0;font-size:1.25rem;line-height:1.25}
+.tool p{margin:0;color:var(--muted)}
+.tool .open{margin-top:8px;font-weight:700;color:var(--red-dark)}
+.tool:hover .open{text-decoration:underline}
+.soon{margin-top:28px;color:var(--muted)}
+.tool.coming{border-top-color:#aab1bc;background:#f8f9fb}
+.tool.coming:hover{border-color:var(--line);border-top-color:#aab1bc;box-shadow:none}
+.tool.coming h2{color:#3d4552}
+.tool.coming .open{color:var(--muted);font-weight:600}
+.tool.coming:hover .open{text-decoration:none}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <h1>Team toolbox</h1>
+  <p class="lede">Small online tools that save time on everyday tasks. Pick one, follow the steps on the page, and you are done.</p>
+
+  <div class="tools">
+    <!-- One block per tool. To add a tool: copy a whole <a> block, change the link, the title and the sentence. -->
+    <a class="tool" href="nameplates/nameplates.html">
+      <h2>Nameplates generator</h2>
+      <p>Turn a list of names into a PowerPoint with one slide per name, ready to print as table nameplates.</p>
+      <span class="open">Open the tool</span>
+    </a>
+    <div class="tool coming">
+      <h2>Sarbacane list cleaner</h2>
+      <p>Clean up a contact list exported from Sarbacane.</p>
+      <span class="open">Coming soon</span>
+    </div>
+    <div class="tool coming">
+      <h2>Registration list</h2>
+      <p>Build and tidy the registration list for an event.</p>
+      <span class="open">Coming soon</span>
+    </div>
+  </div>
+
+  <p class="soon">More tools will be added here over time.</p>
+</div>
+</body>
+</html>
