@@ -323,24 +323,4 @@ $("example").addEventListener("click", () => {
   els.names.focus();
 });
 
-/* Names from an Excel / CSV file: only the columns Name and Last name are used. */
-$("namesFile").addEventListener("change", async () => {
-  const file = $("namesFile").files[0], note = $("namesFileNote");
-  if (!file) return;
-  note.className = "hint";
-  try {
-    const rows = await readTable(file), hdr = (rows[0] || []).map(norm);
-    const find = list => hdr.findIndex(h => list.includes(h));
-    const f = find(["name", "firstname"]), l = find(["lastname", "surname", "familyname"]);
-    if (f < 0 || l < 0) { note.textContent = "Couldn't find the columns “Name” and “Last name” (or “Surname”) on the first row of the file."; note.className = "hint error"; return; }
-    const lines = rows.slice(1).map(r => (clean(r[f]) + " " + clean(r[l])).trim()).filter(Boolean);
-    if (!lines.length) { note.textContent = "No names found in this file."; note.className = "hint error"; return; }
-    els.names.value = lines.join("\n");
-    refreshNames();
-    note.textContent = lines.length + (lines.length === 1 ? " name" : " names") + " loaded from " + file.name + ". You can still edit them below.";
-  } catch (e) {
-    note.textContent = "That file couldn't be read. Please choose an .xlsx or .csv file."; note.className = "hint error";
-  } finally { $("namesFile").value = ""; }
-});
-
 refreshNames();

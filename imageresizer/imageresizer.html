@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Image resizer</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.fields{display:grid;gap:12px}
+.fields label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+.fields input,.fields select{font:inherit;font-weight:400;padding:10px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;color:var(--ink);min-width:0}
+.fields input:focus-visible,.fields select:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+fieldset{margin:0 0 14px;padding:0;border:0}
+legend{padding:0;margin:0 0 6px;font-weight:600;font-size:.95rem}
+.fields .choice{display:flex;gap:10px;align-items:flex-start;margin:0 0 8px;font-weight:400}
+.choice input{margin-top:5px;accent-color:var(--red)}
+.choice small{display:block;color:var(--muted)}
+.fields input[type=range]{padding:0;border:0;accent-color:var(--red)}
+.fields input[type=color]{padding:2px;height:42px}
+.fields .inline{display:flex;gap:10px;align-items:center;font-weight:400}
+.inline input{accent-color:var(--red)}
+#stage{width:100%;height:auto;display:block;background:#e9ecf0;border:1px solid var(--line);border-radius:var(--r);touch-action:none}
+#stage.crop{cursor:grab}#stage.crop.drag{cursor:grabbing}
+.stats{margin:12px 0 0;font-size:.95rem}
+.warn{margin:8px 0 0;font-size:.92rem;color:#8a4b00}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>Image resizer</h1>
+    <p class="lede">Resize, crop and compress an image for the website, the newsletter or social media.</p>
+    <p class="how">How it works: you choose an image and a size. You can either crop it to an exact format, choosing which part to keep, or only change its size and keep the whole picture.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Choose your image</h2>
+        <p>A JPG, PNG or WebP image.</p>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp">
+          <span class="main-line" id="fileMain">Choose an image</span>
+          <span class="sub-line" id="fileSub">or drop it here</span>
+        </label>
+        <p class="hint" id="srcInfo"></p>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Choose the size</h2>
+        <div class="fields">
+          <fieldset>
+            <legend>What should happen to the image?</legend>
+            <label class="choice"><input type="radio" name="mode" value="crop" checked><span>Crop to an exact format<small>The image fills the format. You choose which part to keep; the rest is cut off.</small></span></label>
+            <label class="choice"><input type="radio" name="mode" value="fit"><span>Only change the size<small>The whole image is kept, with its own proportions. Width and height are maximums, and the image is never enlarged.</small></span></label>
+            <label class="choice"><input type="radio" name="mode" value="pad"><span>Exact format, nothing cut off<small>The whole image is kept and a background is added around it where needed.</small></span></label>
+          </fieldset>
+          <label>Format<select id="preset"></select></label>
+          <div class="row">
+            <label>Width (px)<input id="w" type="number" min="1" max="8000" inputmode="numeric"></label>
+            <label>Height (px)<input id="h" type="number" min="1" max="8000" inputmode="numeric"></label>
+          </div>
+          <div><button type="button" class="linkbtn" id="swap" style="margin-top:0">Swap width and height</button></div>
+          <label id="cropTools">Zoom<input id="zoom" type="range" min="100" max="300" value="100" step="1"><span class="hint" style="font-size:.92rem;color:var(--muted)">Drag the image in the preview to choose the part you keep.</span></label>
+          <div id="bgTools" class="fields" hidden>
+            <label>Background colour<input id="bg" type="color" value="#ffffff"></label>
+            <label class="inline"><input type="checkbox" id="transparent">Transparent background (PNG or WebP only)</label>
+          </div>
+        </div>
+      </div></section>
+
+      <section class="step" id="step3"><div class="num" aria-hidden="true"><span>3</span></div><div>
+        <h2>Save it</h2>
+        <div class="fields">
+          <label>File type<select id="fmt"><option value="image/jpeg">JPG (photos, smallest files)</option><option value="image/png">PNG (logos, transparency)</option><option value="image/webp">WebP (small, modern)</option></select></label>
+          <label id="qBox"><span>Quality: <span id="qVal">85</span>%</span><input id="q" type="range" min="40" max="100" value="85"></label>
+        </div>
+        <p></p>
+        <button type="button" class="go" id="go" disabled>Download the image</button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </div></section>
+    </div>
+
+    <aside class="preview" aria-label="Preview">
+      <div id="empty" class="empty">The preview will appear here once you choose an image.</div>
+      <canvas id="stage" hidden></canvas>
+      <p class="stats" id="stats" role="status" aria-live="polite"></p>
+      <p class="warn" id="warn" hidden></p>
+    </aside>
+  </main>
+
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Is my image uploaded anywhere?</summary><div><p>No. Everything happens inside your browser, on your computer.</p></div></details>
+    <details><summary>What is the difference between the three options?</summary><div><p><strong>Crop</strong> gives an image of exactly the size you ask for, by cutting off what does not fit (you choose what). <strong>Only change the size</strong> keeps the whole image and its proportions, so the result can be smaller than the size you typed. <strong>Exact format, nothing cut off</strong> gives the exact size and keeps the whole image by adding a background around it.</p></div></details>
+    <details><summary>Which file type should I choose?</summary><div><p>JPG for photos, PNG for logos or images with text and transparency, WebP if the place where you use it accepts it. For JPG and WebP, a quality around 80 to 85% is usually a good balance between sharpness and weight.</p></div></details>
+    <details><summary>The preview says the image is too small</summary><div><p>When the original is smaller than the format, it has to be enlarged and may look blurry. Use a larger original, or a smaller format.</p></div></details>
+    <details><summary>Can I add my own formats to the list?</summary><div><p>Yes: they are listed at the top of <code>imageresizer.js</code> and can be edited there, or you can just type any width and height.</p></div></details>
+    <details><summary>My iPhone photo (HEIC) is not accepted</summary><div><p>Only JPG, PNG and WebP are supported. On a Mac or iPhone you can export the photo as JPG first.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: your image never leaves your computer.</footer>
+</div>
+<script src="imageresizer.js"></script>
+</body>
+</html>
