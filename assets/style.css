@@ -66,3 +66,4 @@ label.addlogo input{position:absolute;width:1px;height:1px;opacity:0}
 .logolist span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.92rem}
 .logolist .linkbtn{margin:0}
 footer{margin-top:32px;font-size:.92rem;color:var(--muted)}
+.hint.error{color:#b00020}
