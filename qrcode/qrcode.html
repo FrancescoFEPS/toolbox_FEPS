@@ -65,6 +65,10 @@ button.alt:hover:not(:disabled){background:var(--tint);border-color:var(--red)}b
             <label>Position<select id="pos"><option value="corner" selected>Bottom-right corner</option><option value="center">Middle</option></select></label>
             <label>Behind the logo<select id="back"><option value="shape" selected>Follow the logo's shape</option><option value="square">Plain square</option></select></label>
           </div>
+          <div class="row">
+            <label><span>Move up</span><input id="up" type="range" min="-6" max="12" value="3" step="1"></label>
+            <label><span>Sideways (left to right)</span><input id="side" type="range" min="-8" max="3" value="1" step="1"></label>
+          </div>
           <label><span>Logo size: <span id="pctVal">20</span>% of the code</span><input id="pct" type="range" min="10" max="25" value="20" step="1"></label>
         </div>
         <details>

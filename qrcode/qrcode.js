@@ -190,8 +190,11 @@ function geometry() {
 /* Where the logo goes, in pixels: bottom-right corner (a little into the white border) or the middle. */
 function logoRect(g) {
   const k = Math.min(g.box / logo.width, g.box / logo.height), w = logo.width * k, h = logo.height * k;
-  if ($("pos").value === "corner") { const r = (MARGIN + qr.size + 1) * g.scale; return { x: r - w, y: r - h, w, h }; }
-  return { x: (g.total - w) / 2, y: (g.total - h) / 2, w, h };
+  let x, y;
+  if ($("pos").value === "corner") { const r = (MARGIN + qr.size + 1) * g.scale; x = r - w; y = r - h; }
+  else { x = (g.total - w) / 2; y = (g.total - h) / 2; }
+  x += $("side").value * g.scale; y -= $("up").value * g.scale;
+  return { x: Math.min(g.total - w, Math.max(0, x)), y: Math.min(g.total - h, Math.max(0, y)), w, h };
 }
 /* Which code squares are hidden by the logo: those touched by the logo's visible part (plus one square around it),
    or those under a plain square. This is how the transparent parts of the logo are respected. */
@@ -316,5 +319,7 @@ fetch("logo_FEPS.png").then(r => { if (!r.ok) throw new Error(r.status); return 
     $("logoNote").textContent = "The FEPS logo could not be loaded. Open this page from the website, not from a downloaded file, or choose your own logo.";
     applyLogoMode();
   });
-for (const id of ["link", "fg", "bg", "px", "pct", "pos", "back"]) $(id).addEventListener("input", render);
+/* Choosing a position puts the logo back at that position's usual place; the two sliders then fine-tune it. */
+$("pos").addEventListener("input", () => { $("up").value = $("pos").value === "corner" ? 3 : 0; $("side").value = $("pos").value === "corner" ? 1 : 0; });
+for (const id of ["link", "fg", "bg", "px", "pct", "pos", "back", "up", "side"]) $(id).addEventListener("input", render);
 render();
