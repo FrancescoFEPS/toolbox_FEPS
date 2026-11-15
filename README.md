@@ -11,6 +11,10 @@ Small online tools for the team. Everything runs in the browser: **nothing is up
 | Registration list | `registration/` | Turns the registrations exported from the website (Excel) into the printable signature list (Word). |
 | Image resizer | `imageresizer/` | Crops, resizes and compresses an image for the website, the newsletter or social media. |
 | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
+| List cleaner | `cleaner/` | Cleans an Excel/CSV list (spaces, capitals, empty rows, duplicates, wrong emails, comparison with another list). |
+| PDF merge and split | `pdf/` | Merges PDFs, takes pages out of a PDF, or splits a PDF into several files. |
+| Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
+| Quote visuals | `quotecard/` | Turns a quote into a PNG image (3 styles, 3 formats, optional photo and logo). |
 
 ## Structure
 
@@ -20,12 +24,17 @@ assets/
   style.css                shared look (all pages)
   jszip.min.js             JSZip 3.10.1, one shared copy
   table.js                 shared reader for .xlsx / .csv files (needs JSZip)
+  pdf-lib.min.js           pdf-lib 1.17.1 (MIT), used by the PDF tool
 favicon/favicon.png
 nameplates/    nameplates.html + nameplates.js      (+ Nameplates_FEPS.pptx)
 registration/  registration.html + registration.js  (+ Registration_template.docx)
 sarbacane/     sarbacane.html + sarbacane.js
 imageresizer/  imageresizer.html + imageresizer.js
 qrcode/        qrcode.html + qrcode.js  (+ logo_FEPS.png)
+cleaner/       cleaner.html + cleaner.js
+pdf/           pdf.html + pdf.js
+blur/          blur.html + blur.js
+quotecard/     quotecard.html + quotecard.js
 ```
 
 Rules of the structure:
@@ -68,6 +77,26 @@ Rules of the structure:
 - The logo is placed in the bottom-right corner by default (or in the middle), at 10 to 25% of the code width, and two sliders ("Move up", "Sideways") fine-tune its position. By default the code squares are removed only where the visible part of the logo (plus one square around it) is, so the transparent parts of the logo are respected; "Plain square" clears a rectangle instead. A warning appears if the logo hides too much of the code.
 - Colours and image size are adjustable, with a low-contrast warning.
 - Output: PNG, or SVG (vector, for print, logo embedded).
+
+**List cleaner**
+- Reads the first sheet of an .xlsx, or a CSV (comma, semicolon or tab). The first row must hold the column titles.
+- Options: remove extra spaces, remove empty rows or columns, fix capitals per column (only changes values that are all capitals or all small letters, so "McDonald" is left alone), remove rows with a wrong-looking email, remove duplicates (whole row or one chosen column, first one kept, capitals and spaces ignored), and compare with a second list (remove the people who are in it, or keep only them; the matching column must have the same title in both files).
+- Excel dates read as numbers (45123) are turned back into dates in columns whose title contains "date" or "time".
+- Output: .xlsx (written by the tool with JSZip, bold frozen header row) or .csv (UTF-8 with BOM, semicolon or comma). The original file is never changed.
+
+**PDF merge and split**
+- Uses `assets/pdf-lib.min.js`. Three actions: merge (order chosen with Up/Down), take pages out (ranges such as `1-3, 7, 10-`, in the order typed), split every N pages (zip of PDFs named `<file>_p1-2.pdf`).
+- Password-protected PDFs are refused with a clear message. Pages are copied as they are (no compression); links, bookmarks and forms may be lost.
+
+**Blur and hide**
+- Images only (JPG, PNG, WebP). The user drags rectangles on the image; each is pixelated, blurred or covered with a black box. The result is a flat new image, so the hidden pixels cannot be recovered, and the original's metadata (EXIF, GPS) is not copied.
+- Pixelate and blur are drawn by shrinking and enlarging the zone (no `ctx.filter`, so it also works in Safari). Strength is one setting for all pixelate/blur zones.
+- Not done yet: PDFs (idea: render each page to an image with pdf.js, hide, rebuild).
+
+**Quote visuals**
+- Three styles (red, white, dark; colours from the site's CSS) and three formats (square 1080x1080, portrait 1080x1350, wide 1200x630). The quote font size shrinks automatically to fit; if it still does not fit the text is cut with "..." and a message says so.
+- Optional photo (cut into a circle around the centre) and logo (optionally on a white plate). The built-in FEPS logo is only used in the QR code tool.
+- Fonts are system fonts (Arial, Georgia). To use the official font, it would have to be added as a file in the tool's folder.
 
 ## Running it on your computer
 

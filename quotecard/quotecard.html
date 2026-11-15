@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quote visuals</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.fields{display:grid;gap:12px}
+.fields label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+.fields input[type=text],.fields select,.fields textarea{font:inherit;font-weight:400;padding:10px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;color:var(--ink);min-width:0;width:100%}
+.fields textarea{min-height:110px}
+.fields input:focus-visible,.fields select:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+fieldset{margin:0 0 12px;padding:0;border:0}legend{padding:0;margin:0 0 6px;font-weight:600;font-size:.95rem}
+.styles{display:flex;gap:10px;flex-wrap:wrap}
+.styles label{display:flex;gap:8px;align-items:center;padding:8px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;font-weight:600;cursor:pointer}
+.styles input{accent-color:var(--red)}
+.styles label:has(input:checked){border-color:var(--red);background:var(--tint)}
+.styles label:has(input:focus-visible){outline:3px solid var(--red);outline-offset:2px}
+.sw{width:18px;height:18px;border-radius:4px;border:1px solid #8f98a6;display:inline-block}
+.check{display:flex;gap:10px;align-items:center;font-weight:400}.check input{accent-color:var(--red)}
+.sub{margin:16px 0 6px;font-size:1rem}
+#stage{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:var(--r)}
+button.alt{font:inherit;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:var(--r);padding:9px 16px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>Quote visuals</h1>
+    <p class="lede">Turn a quote into an image for social media, a newsletter or a website.</p>
+    <p class="how">How it works: you type the quote and the name of the speaker, choose a look and a format, and download the image (PNG). You can add the photo of the speaker and a logo.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Write the quote</h2>
+        <div class="fields">
+          <label>Quote<textarea id="quote" placeholder="A short, striking sentence from the speaker goes here." spellcheck="true"></textarea></label>
+          <label>Name<input type="text" id="name" placeholder="Firstname LASTNAME" autocomplete="off"></label>
+          <label>Title and organisation (optional)<input type="text" id="role" placeholder="Title, Organisation" autocomplete="off"></label>
+        </div>
+        <p class="hint">Short quotes look best. You do not need to type the quotation marks: they are added for you.</p>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Choose the look</h2>
+        <fieldset><legend>Style</legend>
+          <div class="styles">
+            <label><input type="radio" name="style" value="red" checked><span class="sw" style="background:#c8102e"></span>Red</label>
+            <label><input type="radio" name="style" value="white"><span class="sw" style="background:#fff;border-top:5px solid #c8102e"></span>White</label>
+            <label><input type="radio" name="style" value="dark"><span class="sw" style="background:#14161b"></span>Dark</label>
+          </div>
+        </fieldset>
+        <div class="fields">
+          <label>Format<select id="format"><option value="square">Square, 1080 × 1080 (social media posts)</option><option value="portrait">Portrait, 1080 × 1350 (Instagram, LinkedIn)</option><option value="wide">Wide, 1200 × 630 (link previews, newsletter, website)</option></select></label>
+        </div>
+        <h3 class="sub">Photo of the speaker (optional)</h3>
+        <label class="addlogo"><input type="file" id="photo" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp">Choose a photo</label>
+        <ul class="logolist" id="photoList"></ul>
+        <h3 class="sub">Logo (optional)</h3>
+        <label class="addlogo"><input type="file" id="logo" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp">Choose a logo</label>
+        <ul class="logolist" id="logoList"></ul>
+        <label class="check" id="plateBox" hidden style="margin-top:8px"><input type="checkbox" id="plate" checked>Put the logo on a white plate (so it stays visible)</label>
+      </div></section>
+
+      <section class="step" id="step3"><div class="num" aria-hidden="true"><span>3</span></div><div>
+        <h2>Download</h2>
+        <p>The button turns on once you have typed a quote.</p>
+        <button type="button" class="go" id="go" disabled>Download the image</button>
+        <p id="status" role="status" aria-live="polite"></p>
+        <p class="hint">Check the text on the image before you publish it.</p>
+      </div></section>
+    </div>
+
+    <aside class="preview" aria-label="Preview">
+      <canvas id="stage" aria-label="Preview of the image"></canvas>
+      <p class="caption" id="info"></p>
+    </aside>
+  </main>
+
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Is my text or photo uploaded anywhere?</summary><div><p>No. The image is made inside your browser, on your computer.</p></div></details>
+    <details><summary>My quote is long and the letters become small</summary><div><p>The text is made smaller automatically so it fits. Very long quotes become hard to read: shorten the quote, or choose the portrait format, which has more room.</p></div></details>
+    <details><summary>Which format should I choose?</summary><div><p>Square works almost everywhere. Portrait takes more space in a social media feed. Wide is the format of link previews and fits a newsletter or a web page.</p></div></details>
+    <details><summary>How is the photo cut?</summary><div><p>It is cut into a circle, around the centre of the picture. Choose a photo where the face is in the middle.</p></div></details>
+    <details><summary>My logo cannot be seen on the red or dark style</summary><div><p>Keep “Put the logo on a white plate” ticked: the logo is then shown on a small white rectangle.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: your text, photo and logo never leave your computer.</footer>
+</div>
+<script src="quotecard.js"></script>
+</body>
+</html>
