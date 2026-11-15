@@ -10,6 +10,7 @@ Small online tools for the team. Everything runs in the browser: **nothing is up
 | Sarbacane code cleaner | `sarbacane/` | Applies 4 fixed replacements to the raw HTML of a Sarbacane newsletter. |
 | Registration list | `registration/` | Turns the registrations exported from the website (Excel) into the printable signature list (Word). |
 | Image resizer | `imageresizer/` | Crops, resizes and compresses an image for the website, the newsletter or social media. |
+| QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
 
 ## Structure
 
@@ -24,6 +25,7 @@ nameplates/    nameplates.html + nameplates.js      (+ Nameplates_FEPS.pptx)
 registration/  registration.html + registration.js  (+ Registration_template.docx)
 sarbacane/     sarbacane.html + sarbacane.js
 imageresizer/  imageresizer.html + imageresizer.js
+qrcode/        qrcode.html + qrcode.js  (+ logo_FEPS.png)
 ```
 
 Rules of the structure:
@@ -32,7 +34,7 @@ Rules of the structure:
 - Script order on a page: `../assets/jszip.min.js`, then `../assets/table.js` (only if the tool reads Excel/CSV), then the tool's own JS.
 - Shared look = `assets/style.css`. Only what is specific to one page goes in a small `<style>` in that page.
 - No CDN and no external request: the tools work without internet once the page is loaded.
-- `Nameplates_FEPS.pptx` and `Registration_template.docx` are loaded by the page with `fetch`, so they must stay in the same folder as their page.
+- `Nameplates_FEPS.pptx`, `Registration_template.docx` and `logo_FEPS.png` are loaded by the page with `fetch`, so they must stay in the same folder as their page.
 
 ## How each tool works
 
@@ -58,6 +60,12 @@ Rules of the structure:
 - Three modes: crop to an exact format (drag and zoom to choose what is kept), only change the size (whole image, never enlarged, width and/or height as maximums), exact format with a background added (colour or transparent).
 - Output as JPG, PNG or WebP, with a quality setting. The weight is shown before and after.
 - Ready-made formats are listed in `PRESETS` at the top of `imageresizer.js`: add or edit lines there. Sizes are limited to 8000 px on a side.
+
+**QR code maker**
+- The QR encoder is written in `qrcode.js` itself (no library): byte mode, versions 1 to 40, all four error-correction levels. With a logo the code uses level H (about 30% can be lost), without a logo level M.
+- A link typed without `https://` gets it added. Links are limited to 800 characters.
+- The FEPS logo (`logo_FEPS.png`, transparent PNG, loaded with `fetch` like the templates) is used by default. The user can switch to their own logo (PNG, JPG or WebP) or to no logo. The logo is shown at 10 to 25% of the code width, on a background-coloured rounded square. Colours and image size are adjustable, with a low-contrast warning.
+- Output: PNG, or SVG (vector, for print, logo embedded).
 
 ## Running it on your computer
 
