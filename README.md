@@ -64,7 +64,9 @@ Rules of the structure:
 **QR code maker**
 - The QR encoder is written in `qrcode.js` itself (no library): byte mode, versions 1 to 40, all four error-correction levels. With a logo the code uses level H (about 30% can be lost), without a logo level M.
 - A link typed without `https://` gets it added. Links are limited to 800 characters.
-- The FEPS logo (`logo_FEPS.png`, transparent PNG, loaded with `fetch` like the templates) is used by default. The user can switch to their own logo (PNG, JPG or WebP) or to no logo. The logo is shown at 10 to 25% of the code width, on a background-coloured rounded square. Colours and image size are adjustable, with a low-contrast warning.
+- The FEPS logo (`logo_FEPS.png`, transparent PNG, loaded with `fetch` like the templates) is used by default. The user can switch to their own logo (PNG, JPG or WebP) or to no logo.
+- The logo is placed in the bottom-right corner by default (or in the middle), at 10 to 25% of the code width. By default the code squares are removed only where the visible part of the logo (plus one square around it) is, so the transparent parts of the logo are respected; "Plain square" clears a rectangle instead. A warning appears if the logo hides too much of the code.
+- Colours and image size are adjustable, with a low-contrast warning.
 - Output: PNG, or SVG (vector, for print, logo embedded).
 
 ## Running it on your computer

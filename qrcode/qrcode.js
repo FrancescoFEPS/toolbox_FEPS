@@ -141,7 +141,7 @@ function qrEncode(text, ecl) {
     apply(mask);
   }
   apply(best); drawFormat(best);
-  return { size, version: ver, modules: m };
+  return { size, version: ver, modules: m, fn };
 }
 
 function penalty(m, size) {
@@ -185,9 +185,37 @@ const lum = hex => { const c = [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16)
 
 function geometry() {
   const n = qr.size + 2 * MARGIN, scale = Math.max(1, Math.floor($("px").value / n)), total = n * scale;
-  const box = logo ? Math.round(total * $("pct").value / 100) : 0;
-  return { n, scale, total, box, pad: Math.round(box * .12) };
+  return { n, scale, total, box: logo ? Math.round(total * $("pct").value / 100) : 0 };
 }
+/* Where the logo goes, in pixels: bottom-right corner (a little into the white border) or the middle. */
+function logoRect(g) {
+  const k = Math.min(g.box / logo.width, g.box / logo.height), w = logo.width * k, h = logo.height * k;
+  if ($("pos").value === "corner") { const r = (MARGIN + qr.size + 1) * g.scale; return { x: r - w, y: r - h, w, h }; }
+  return { x: (g.total - w) / 2, y: (g.total - h) / 2, w, h };
+}
+/* Which code squares are hidden by the logo: those touched by the logo's visible part (plus one square around it),
+   or those under a plain square. This is how the transparent parts of the logo are respected. */
+function clearedCells(g, r) {
+  const N = g.n, S = 4, W = N * S, f = S / g.scale, size = qr.size;
+  const oc = document.createElement("canvas"); oc.width = oc.height = W;
+  const c = oc.getContext("2d", { willReadFrequently: true }), plain = $("back").value === "square", pad = Math.round(g.box * .12);
+  if (plain) { c.fillRect((r.x - pad) * f, (r.y - pad) * f, (r.w + 2 * pad) * f, (r.h + 2 * pad) * f); }
+  else c.drawImage(logo, r.x * f, r.y * f, r.w * f, r.h * f);
+  const d = c.getImageData(0, 0, W, W).data;
+  let hit = Array.from({ length: size }, () => new Array(size).fill(false));
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    for (let yy = 0; yy < S && !hit[y][x]; yy++) for (let xx = 0; xx < S; xx++)
+      if (d[(((y + MARGIN) * S + yy) * W + (x + MARGIN) * S + xx) * 4 + 3] > 40) { hit[y][x] = true; break; }
+  }
+  if (!plain) {
+    const out = hit.map(row => row.slice());
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (hit[y][x])
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const yy = y + dy, xx = x + dx; if (yy >= 0 && yy < size && xx >= 0 && xx < size) out[yy][xx] = true; }
+    hit = out;
+  }
+  return hit;
+}
+
 function render() {
   const text = normalise($("link").value);
   $("step1").classList.toggle("done", !!text);
@@ -196,7 +224,7 @@ function render() {
   $("dlPng").disabled = $("dlSvg").disabled = true;
   $("step3").classList.remove("ready");
   qr = null;
-  $("warn").hidden = true;
+  $("warn").hidden = true; $("warn").textContent = "";
   if (!text) { canvas.hidden = true; $("empty").hidden = false; $("stats").textContent = ""; $("linkNote").textContent = "Any web address works. Shorter links give simpler codes that are easier to scan."; return; }
   if (text.length > MAX_CHARS) {
     canvas.hidden = true; $("empty").hidden = false; $("stats").textContent = "";
@@ -209,19 +237,19 @@ function render() {
   const g = geometry(), fg = $("fg").value, bg = $("bg").value;
   canvas.width = canvas.height = g.total;
   ctx.fillStyle = bg; ctx.fillRect(0, 0, g.total, g.total);
+  const r = logo ? logoRect(g) : null, clear = logo ? clearedCells(g, r) : null;
   ctx.fillStyle = fg;
-  for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.modules[y][x]) ctx.fillRect((x + MARGIN) * g.scale, (y + MARGIN) * g.scale, g.scale, g.scale);
+  for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.modules[y][x] && !(clear && clear[y][x])) ctx.fillRect((x + MARGIN) * g.scale, (y + MARGIN) * g.scale, g.scale, g.scale);
   if (logo) {
-    const side = g.box + 2 * g.pad, o = Math.round((g.total - side) / 2), r = Math.round(side * .12);
-    ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(o, o, side, side, r); ctx.fill();
-    const k = Math.min(g.box / logo.width, g.box / logo.height), w = logo.width * k, h = logo.height * k;
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(logo, (g.total - w) / 2, (g.total - h) / 2, w, h);
+    ctx.drawImage(logo, r.x, r.y, r.w, r.h);
+    const lost = clear.flat().filter(Boolean).length / (qr.size * qr.size);
+    if (lost > .12) { $("warn").hidden = false; $("warn").textContent = "The logo is large for this code, so it may not scan. Make the logo smaller or the link shorter."; }
   }
   canvas.hidden = false; $("empty").hidden = true;
   $("stats").textContent = "QR code of " + g.total + " × " + g.total + " px" + (logo ? ", made with the highest level of error correction so the logo does not stop it from working." : ".");
   const ratio = (Math.max(lum(fg), lum(bg)) + .05) / (Math.min(lum(fg), lum(bg)) + .05);
-  if (lum(fg) > lum(bg) || ratio < 4) { $("warn").hidden = false; $("warn").textContent = "Low contrast: use a code colour much darker than the background, or the code may not scan."; }
+  if (lum(fg) > lum(bg) || ratio < 4) { $("warn").hidden = false; $("warn").textContent = ($("warn").textContent ? $("warn").textContent + " " : "") + "Low contrast: use a code colour much darker than the background, or the code may not scan."; }
   $("dlPng").disabled = $("dlSvg").disabled = false;
   $("step3").classList.add("ready");
 }
@@ -238,17 +266,13 @@ function save(blob, name) {
 }
 $("dlPng").addEventListener("click", () => canvas.toBlob(b => b ? save(b, fileBase() + ".png") : setStatus("Something went wrong while creating the image.", "error"), "image/png"));
 $("dlSvg").addEventListener("click", () => {
-  const g = geometry(), fg = $("fg").value, bg = $("bg").value, s = g.total;
+  const g = geometry(), fg = $("fg").value, bg = $("bg").value, s = g.total, N = g.n, u = 1 / g.scale;
+  const r = logo ? logoRect(g) : null, clear = logo ? clearedCells(g, r) : null;
   let d = "";
-  for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.modules[y][x]) d += "M" + (x + MARGIN) + " " + (y + MARGIN) + "h1v1h-1z";
-  const N = g.n, unit = 1 / g.scale;
+  for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.modules[y][x] && !(clear && clear[y][x])) d += "M" + (x + MARGIN) + " " + (y + MARGIN) + "h1v1h-1z";
   let svg = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ' + N + " " + N + '" width="' + s + '" height="' + s + '" shape-rendering="crispEdges">' +
     '<rect width="' + N + '" height="' + N + '" fill="' + bg + '"/><path d="' + d + '" fill="' + fg + '"/>';
-  if (logo) {
-    const box = g.box * unit, pad = g.pad * unit, side = box + 2 * pad, o = (N - side) / 2, k = Math.min(box / logo.width, box / logo.height), w = logo.width * k, h = logo.height * k;
-    svg += '<rect x="' + o + '" y="' + o + '" width="' + side + '" height="' + side + '" rx="' + side * .12 + '" fill="' + bg + '"/>' +
-      '<image x="' + (N - w) / 2 + '" y="' + (N - h) / 2 + '" width="' + w + '" height="' + h + '" xlink:href="' + logoData + '" href="' + logoData + '"/>';
-  }
+  if (logo) svg += '<image x="' + r.x * u + '" y="' + r.y * u + '" width="' + r.w * u + '" height="' + r.h * u + '" xlink:href="' + logoData + '" href="' + logoData + '"/>';
   save(new Blob([svg + "</svg>"], { type: "image/svg+xml" }), fileBase() + ".svg");
 });
 
@@ -292,5 +316,5 @@ fetch("logo_FEPS.png").then(r => { if (!r.ok) throw new Error(r.status); return 
     $("logoNote").textContent = "The FEPS logo could not be loaded. Open this page from the website, not from a downloaded file, or choose your own logo.";
     applyLogoMode();
   });
-for (const id of ["link", "fg", "bg", "px", "pct"]) $(id).addEventListener("input", render);
+for (const id of ["link", "fg", "bg", "px", "pct", "pos", "back"]) $(id).addEventListener("input", render);
 render();

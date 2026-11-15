@@ -61,6 +61,10 @@ button.alt:hover:not(:disabled){background:var(--tint);border-color:var(--red)}b
           <ul class="logolist" id="logoList"></ul>
         </div>
         <div class="fields" id="logoTools" hidden>
+          <div class="row">
+            <label>Position<select id="pos"><option value="corner" selected>Bottom-right corner</option><option value="center">Middle</option></select></label>
+            <label>Behind the logo<select id="back"><option value="shape" selected>Follow the logo's shape</option><option value="square">Plain square</option></select></label>
+          </div>
           <label><span>Logo size: <span id="pctVal">20</span>% of the code</span><input id="pct" type="range" min="10" max="25" value="20" step="1"></label>
         </div>
         <details>
