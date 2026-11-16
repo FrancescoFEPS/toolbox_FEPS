@@ -4,22 +4,25 @@ Small online tools for the team. Everything runs in the browser: **nothing is up
 
 ## The tools
 
-| Tool | Folder | What it does |
-|---|---|---|
-| Nameplates generator | `nameplates/` | Turns a list of names into a PowerPoint with one slide per name, ready to print as folded table nameplates. |
-| Sarbacane code cleaner | `sarbacane/` | Applies 4 fixed replacements to the raw HTML of a Sarbacane newsletter. |
-| Registration list | `registration/` | Turns the registrations exported from the website (Excel) into the printable signature list (Word). |
-| Image resizer | `imageresizer/` | Crops, resizes and compresses an image for the website, the newsletter or social media. |
-| QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
-| List cleaner | `cleaner/` | Cleans an Excel/CSV list (spaces, capitals, empty rows, duplicates, wrong emails, comparison with another list). |
-| PDF merge and split | `pdf/` | Merges PDFs, takes pages out of a PDF, or splits a PDF into several files. |
-| Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
-| Quote visuals | `quotecard/` | Turns a quote into a PNG image (3 styles, 3 formats, optional photo and logo). |
+On the home page the tools are grouped by type, with a title per group.
+
+| Group | Tool | Folder | What it does |
+|---|---|---|---|
+| Events | Nameplates generator | `nameplates/` | Turns a list of names into a PowerPoint with one slide per name, ready to print as folded table nameplates. |
+| Events | Registration list | `registration/` | Turns the registrations exported from the website (Excel) into the printable signature list (Word). |
+| Newsletter and website | Sarbacane code cleaner | `sarbacane/` | Applies 4 fixed replacements to the raw HTML of a Sarbacane newsletter. |
+| Newsletter and website | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
+| Images | Image resizer | `imageresizer/` | Crops, resizes, compresses or changes the format of an image for the website, the newsletter or social media. |
+| Images | Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
+| Lists and documents | List cleaner | `cleaner/` | Cleans an Excel/CSV list (spaces, capitals, empty rows, duplicates, wrong emails, comparison with another list). |
+| Lists and documents | PDF merge and split | `pdf/` | Merges PDFs, takes pages out of a PDF, or splits a PDF into several files. |
+
+Set aside for now: **Quote visuals** (`quotecard/`). It was removed from the repository and from the home page until a better style is found.
 
 ## Structure
 
 ```
-index.html                 home page listing the tools (uses assets/style.css)
+index.html                 home page listing the tools by group (uses assets/style.css)
 assets/
   style.css                shared look (all pages)
   jszip.min.js             JSZip 3.10.1, one shared copy
@@ -34,7 +37,6 @@ qrcode/        qrcode.html + qrcode.js  (+ logo_FEPS.png)
 cleaner/       cleaner.html + cleaner.js
 pdf/           pdf.html + pdf.js
 blur/          blur.html + blur.js
-quotecard/     quotecard.html + quotecard.js
 ```
 
 Rules of the structure:
@@ -66,9 +68,9 @@ Rules of the structure:
 - The template must keep: a first table whose first row is the header and second row is the blank row to copy, the three placeholders in header 2, and the hand-typed page total in footer 2.
 
 **Image resizer**
-- Three modes: crop to an exact format (drag and zoom to choose what is kept), only change the size (whole image, never enlarged, width and/or height as maximums), exact format with a background added (colour or transparent).
-- Output as JPG, PNG or WebP, with a quality setting. The weight is shown before and after.
-- Ready-made formats are listed in `PRESETS` at the top of `imageresizer.js`: add or edit lines there. Sizes are limited to 8000 px on a side.
+- Four modes: crop to an exact format (drag and zoom to choose what is kept), only change the size (whole image, never enlarged, width and/or height as maximums), exact format with a background added (colour or transparent), and **keep the original size and change only the file type** (the width and height fields are hidden; the image is re-saved as JPG, PNG or WebP at its own size).
+- Output as JPG, PNG or WebP, with a quality setting. The weight is shown before and after. When a transparent PNG is saved as JPG, the transparent parts become white.
+- Ready-made formats are listed in `PRESETS` at the top of `imageresizer.js`: add or edit lines there. Sizes are limited to 8000 px on a side (this limit does not apply to the "keep the original size" mode).
 
 **QR code maker**
 - The QR encoder is written in `qrcode.js` itself (no library): byte mode, versions 1 to 40, all four error-correction levels. With a logo the code uses level H (about 30% can be lost), without a logo level M.
@@ -93,11 +95,6 @@ Rules of the structure:
 - Pixelate and blur are drawn by shrinking and enlarging the zone (no `ctx.filter`, so it also works in Safari). Strength is one setting for all pixelate/blur zones.
 - Not done yet: PDFs (idea: render each page to an image with pdf.js, hide, rebuild).
 
-**Quote visuals**
-- Three styles (red, white, dark; colours from the site's CSS) and three formats (square 1080x1080, portrait 1080x1350, wide 1200x630). The quote font size shrinks automatically to fit; if it still does not fit the text is cut with "..." and a message says so.
-- Optional photo (cut into a circle around the centre) and logo (optionally on a white plate). The built-in FEPS logo is only used in the QR code tool.
-- Fonts are system fonts (Arial, Georgia). To use the official font, it would have to be added as a file in the tool's folder.
-
 ## Running it on your computer
 
 Open the folder in a terminal and start a small local server, then open the address it shows:
@@ -114,8 +111,8 @@ Do not open the pages by double-clicking the files: the browser then blocks the 
 1. Create a folder `<tool>/` with `<tool>.html` and `<tool>.js`.
 2. In the page, link `../assets/style.css`; add `../assets/jszip.min.js` and `../assets/table.js` only if needed.
 3. Follow the layout of the other tools: back link, title, one-sentence explanation, numbered steps, questions, footer saying the data stays in the browser.
-4. Add a block in `index.html` (copy a whole `<a class="tool">` block and change the link, title and sentence).
-5. Add the tool to the tables above in this README.
+4. In `index.html`, copy a whole `<a class="tool">` block into the right group (Events, Newsletter and website, Images, Lists and documents) and change the link, title and sentence. If no group fits, copy a whole `<section class="group">` to start a new one.
+5. Add the tool to the table above in this README.
 
 ## Good to know
 

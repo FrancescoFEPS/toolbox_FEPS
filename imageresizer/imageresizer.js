@@ -24,6 +24,7 @@ const mode = () => document.querySelector('input[name="mode"]:checked').value;
 const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
 function setStatus(t, k) { $("status").textContent = t; $("status").className = k || ""; }
 function target() {
+  if (mode() === "same") return bmp ? { W: bmp.width, H: bmp.height } : null;   // original size: nothing to type
   const clamp = v => Math.min(MAX_SIDE, parseInt(v, 10));
   const W = clamp($("w").value), H = clamp($("h").value);
   const okW = W > 0, okH = H > 0;
@@ -48,6 +49,8 @@ function render() {
   const m = mode(), t = target();
   $("cropTools").hidden = m !== "crop";
   $("bgTools").hidden = m !== "pad";
+  $("sizeBox").hidden = m === "same";
+  $("sameNote").hidden = m !== "same";
   canvas.className = m === "crop" ? "crop" : "";
   $("step2").classList.toggle("done", !!bmp && !!t);
   $("go").disabled = !(bmp && t);
@@ -68,6 +71,8 @@ function render() {
   } else if (m === "fit") {
     const s = Math.min(1, t.W / iw, t.H / ih);
     cw = Math.max(1, Math.round(iw * s)); ch = Math.max(1, Math.round(ih * s)); dx = 0; dy = 0; dw = cw; dh = ch;
+  } else if (m === "same") {
+    cw = iw; ch = ih; dx = 0; dy = 0; dw = iw; dh = ih;
   } else {
     cw = t.W; ch = t.H;
     const s = Math.min(cw / iw, ch / ih);

@@ -34,8 +34,8 @@ legend{padding:0;margin:0 0 6px;font-weight:600;font-size:.95rem}
   <header>
     <p class="back"><a href="../">Back to all tools</a></p>
     <h1>Image resizer</h1>
-    <p class="lede">Resize, crop and compress an image for the website, the newsletter or social media.</p>
-    <p class="how">How it works: you choose an image and a size. You can either crop it to an exact format, choosing which part to keep, or only change its size and keep the whole picture.</p>
+    <p class="lede">Resize, crop, compress or change the format of an image for the website, the newsletter or social media.</p>
+    <p class="how">How it works: you choose an image and what should happen to it. You can crop it to an exact format, only change its size, keep its size and change only the file type, or fit it in an exact format without cutting anything off.</p>
   </header>
   <main>
     <div class="steps">
@@ -58,13 +58,17 @@ legend{padding:0;margin:0 0 6px;font-weight:600;font-size:.95rem}
             <label class="choice"><input type="radio" name="mode" value="crop" checked><span>Crop to an exact format<small>The image fills the format. You choose which part to keep; the rest is cut off.</small></span></label>
             <label class="choice"><input type="radio" name="mode" value="fit"><span>Only change the size<small>The whole image is kept, with its own proportions. Width and height are maximums, and the image is never enlarged.</small></span></label>
             <label class="choice"><input type="radio" name="mode" value="pad"><span>Exact format, nothing cut off<small>The whole image is kept and a background is added around it where needed.</small></span></label>
+            <label class="choice"><input type="radio" name="mode" value="same"><span>Keep the original size, change only the file type<small>The size does not change at all. Choose the new file type (JPG, PNG or WebP) and the quality in step 3.</small></span></label>
           </fieldset>
-          <label>Format<select id="preset"></select></label>
-          <div class="row">
-            <label>Width (px)<input id="w" type="number" min="1" max="8000" inputmode="numeric"></label>
-            <label>Height (px)<input id="h" type="number" min="1" max="8000" inputmode="numeric"></label>
+          <div class="fields" id="sizeBox">
+            <label>Format<select id="preset"></select></label>
+            <div class="row">
+              <label>Width (px)<input id="w" type="number" min="1" max="8000" inputmode="numeric"></label>
+              <label>Height (px)<input id="h" type="number" min="1" max="8000" inputmode="numeric"></label>
+            </div>
+            <div><button type="button" class="linkbtn" id="swap" style="margin-top:0">Swap width and height</button></div>
           </div>
-          <div><button type="button" class="linkbtn" id="swap" style="margin-top:0">Swap width and height</button></div>
+          <p class="hint" id="sameNote" hidden style="margin:0">The image keeps its original size. Choose the new file type in step 3.</p>
           <label id="cropTools">Zoom<input id="zoom" type="range" min="100" max="300" value="100" step="1"><span class="hint" style="font-size:.92rem;color:var(--muted)">Drag the image in the preview to choose the part you keep.</span></label>
           <div id="bgTools" class="fields" hidden>
             <label>Background colour<input id="bg" type="color" value="#ffffff"></label>
@@ -96,8 +100,9 @@ legend{padding:0;margin:0 0 6px;font-weight:600;font-size:.95rem}
   <section class="faq" aria-label="Questions and answers">
     <h2>Questions</h2>
     <details><summary>Is my image uploaded anywhere?</summary><div><p>No. Everything happens inside your browser, on your computer.</p></div></details>
-    <details><summary>What is the difference between the three options?</summary><div><p><strong>Crop</strong> gives an image of exactly the size you ask for, by cutting off what does not fit (you choose what). <strong>Only change the size</strong> keeps the whole image and its proportions, so the result can be smaller than the size you typed. <strong>Exact format, nothing cut off</strong> gives the exact size and keeps the whole image by adding a background around it.</p></div></details>
+    <details><summary>What is the difference between the four options?</summary><div><p><strong>Crop</strong> gives an image of exactly the size you ask for, by cutting off what does not fit (you choose what). <strong>Only change the size</strong> keeps the whole image and its proportions, so the result can be smaller than the size you typed. <strong>Exact format, nothing cut off</strong> gives the exact size and keeps the whole image by adding a background around it. <strong>Keep the original size</strong> does not touch the size at all: only the file type (and the quality) change.</p></div></details>
     <details><summary>Which file type should I choose?</summary><div><p>JPG for photos, PNG for logos or images with text and transparency, WebP if the place where you use it accepts it. For JPG and WebP, a quality around 80 to 85% is usually a good balance between sharpness and weight.</p></div></details>
+    <details><summary>I changed a PNG with a transparent background into a JPG: why is it white now?</summary><div><p>JPG cannot be transparent, so the transparent parts are filled with white. Keep PNG or choose WebP if you need to keep the transparency.</p></div></details>
     <details><summary>The preview says the image is too small</summary><div><p>When the original is smaller than the format, it has to be enlarged and may look blurry. Use a larger original, or a smaller format.</p></div></details>
     <details><summary>Can I add my own formats to the list?</summary><div><p>Yes: they are listed at the top of <code>imageresizer.js</code> and can be edited there, or you can just type any width and height.</p></div></details>
     <details><summary>My iPhone photo (HEIC) is not accepted</summary><div><p>Only JPG, PNG and WebP are supported. On a Mac or iPhone you can export the photo as JPG first.</p></div></details>

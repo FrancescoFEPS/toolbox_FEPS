@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="assets/style.css">
 <style>
 .lede{margin:0 0 36px;max-width:56ch}
+.group{margin:0 0 40px}
+.group-title{margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--line);font-size:1.15rem;line-height:1.25}
 .tools{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 .tool{display:flex;flex-direction:column;gap:6px;padding:22px;background:var(--surface);border:1px solid var(--line);border-top:6px solid var(--red);border-radius:var(--r);color:inherit;text-decoration:none}
 .tool:hover{border-color:var(--red);box-shadow:0 14px 28px -18px rgba(20,22,27,.45)}
@@ -31,49 +33,72 @@
   <h1>Team toolbox</h1>
   <p class="lede">Small online tools that save time on everyday tasks. Pick one, follow the steps on the page, and you are done.</p>
 
-  <div class="tools">
-    <!-- One block per tool. To add a tool: copy a whole <a> block, change the link, the title and the sentence. -->
-    <a class="tool" href="nameplates/nameplates.html">
-      <h2>Nameplates generator</h2>
-      <p>Turn a list of names into a PowerPoint with one slide per name, ready to print as table nameplates.</p>
-      <span class="open">Open the tool</span>
-    </a>
-    <a class="tool" href="sarbacane/sarbacane.html">
-      <h2>Sarbacane code cleaner</h2>
-      <p>Paste the raw HTML code of a Sarbacane newsletter and get the cleaned-up code back.</p>
-      <span class="open">Open the tool</span>
-    </a>
-    <a class="tool" href="registration/registration.html">
-      <h2>Registration list</h2>
-      <p>Turn the registrations exported from the website into the printable signature list (Word).</p>
-      <span class="open">Open the tool</span>
-    </a>
-    <a class="tool" href="imageresizer/imageresizer.html">
-      <h2>Image resizer</h2>
-      <p>Resize, crop and compress an image for the website, the newsletter or social media.</p>
-      <span class="open">Open the tool</span>
-    </a>
-    <a class="tool" href="qrcode/qrcode.html">
-      <h2>QR code maker</h2>
-      <p>Paste a link and get a QR code with your logo in the middle, as a PNG or an SVG.</p>
-      <span class="open">Open the tool</span>
-    </a>
-    <a class="tool" href="cleaner/cleaner.html">
-      <h2>List cleaner</h2>
-      <p>Clean an Excel or CSV list: spaces, capitals, duplicates, wrong email addresses, comparison with another list.</p>
-      <span class="open">Open the tool</span>
-    </a>
-    <a class="tool" href="pdf/pdf.html">
-      <h2>PDF merge and split</h2>
-      <p>Put several PDFs into one, take pages out of a PDF, or cut a PDF into smaller files.</p>
-      <span class="open">Open the tool</span>
-    </a>
-    <a class="tool" href="blur/blur.html">
-      <h2>Blur and hide</h2>
-      <p>Hide faces, names or any detail on an image: pixelate, blur or cover with a black box.</p>
-      <span class="open">Open the tool</span>
-    </a>
-  </div>
+  <!-- One <section class="group"> per type of tool. To add a tool: copy a whole <a class="tool"> block into the right group
+       (or copy a whole group to start a new one), then change the link, the title and the sentence. -->
+
+  <section class="group" aria-labelledby="g-events">
+    <h2 class="group-title" id="g-events">Events</h2>
+    <div class="tools">
+      <a class="tool" href="nameplates/nameplates.html">
+        <h2>Nameplates generator</h2>
+        <p>Turn a list of names into a PowerPoint with one slide per name, ready to print as table nameplates.</p>
+        <span class="open">Open the tool</span>
+      </a>
+      <a class="tool" href="registration/registration.html">
+        <h2>Registration list</h2>
+        <p>Turn the registrations exported from the website into the printable signature list (Word).</p>
+        <span class="open">Open the tool</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="group" aria-labelledby="g-web">
+    <h2 class="group-title" id="g-web">Newsletter and website</h2>
+    <div class="tools">
+      <a class="tool" href="sarbacane/sarbacane.html">
+        <h2>Sarbacane code cleaner</h2>
+        <p>Paste the raw HTML code of a Sarbacane newsletter and get the cleaned-up code back.</p>
+        <span class="open">Open the tool</span>
+      </a>
+      <a class="tool" href="qrcode/qrcode.html">
+        <h2>QR code maker</h2>
+        <p>Paste a link and get a QR code with your logo in the middle, as a PNG or an SVG.</p>
+        <span class="open">Open the tool</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="group" aria-labelledby="g-images">
+    <h2 class="group-title" id="g-images">Images</h2>
+    <div class="tools">
+      <a class="tool" href="imageresizer/imageresizer.html">
+        <h2>Image resizer</h2>
+        <p>Resize, crop, compress or change the format of an image for the website, the newsletter or social media.</p>
+        <span class="open">Open the tool</span>
+      </a>
+      <a class="tool" href="blur/blur.html">
+        <h2>Blur and hide</h2>
+        <p>Hide faces, names or any detail on an image: pixelate, blur or cover with a black box.</p>
+        <span class="open">Open the tool</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="group" aria-labelledby="g-docs">
+    <h2 class="group-title" id="g-docs">Lists and documents</h2>
+    <div class="tools">
+      <a class="tool" href="cleaner/cleaner.html">
+        <h2>List cleaner</h2>
+        <p>Clean an Excel or CSV list: spaces, capitals, duplicates, wrong email addresses, comparison with another list.</p>
+        <span class="open">Open the tool</span>
+      </a>
+      <a class="tool" href="pdf/pdf.html">
+        <h2>PDF merge and split</h2>
+        <p>Put several PDFs into one, take pages out of a PDF, or cut a PDF into smaller files.</p>
+        <span class="open">Open the tool</span>
+      </a>
+    </div>
+  </section>
 
   <p class="soon">More tools will be added here over time.</p>
 </div>
