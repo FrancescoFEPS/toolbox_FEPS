@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add to calendar</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.fields{display:grid;gap:12px}
+.fields label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+.fields input[type=text],.fields input[type=url],.fields input[type=date],.fields input[type=time],.fields select,.fields textarea{font:inherit;font-weight:400;padding:10px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;color:var(--ink);min-width:0;width:100%}
+.fields textarea{min-height:90px;resize:vertical}
+.fields input:focus-visible,.fields select:focus-visible,.fields textarea:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:0 0 6px;font-weight:400}
+.check input{margin-top:5px;accent-color:var(--red)}
+.check small{display:block;color:var(--muted)}
+.fields .check{display:flex;font-weight:400}
+textarea.code{min-height:150px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:12px;border:2px solid #8f98a6;border-radius:var(--r)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px}
+button.alt{font:inherit;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:var(--r);padding:9px 16px;cursor:pointer}
+button.alt:hover{background:var(--tint);border-color:var(--red)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+.summary{margin:0 0 14px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--red);border-radius:var(--r)}
+.summary strong{display:block;font-size:1.1rem}
+.links{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.links li{padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.links b{display:block;margin-bottom:6px}
+.links .acts{display:flex;gap:10px;flex-wrap:wrap}
+.links a,.links button{font:inherit;font-size:.92rem;padding:5px 12px;border:1px solid #8f98a6;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;text-decoration:none}
+.links a:hover,.links button:hover{background:var(--tint);border-color:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>Add to calendar</h1>
+    <p class="lede">Make an “Add to calendar” file and links for an invitation or a newsletter.</p>
+    <p class="how">How it works: you describe the event once. The page gives you a calendar file (.ics), direct links for Google Calendar and Outlook, and a ready-to-paste piece of HTML for Sarbacane.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Describe the event</h2>
+        <div class="fields">
+          <label>Event title<input type="text" id="title" autocomplete="off" placeholder="e.g. Conference on the future of work"></label>
+          <label>Time zone of the event
+            <select id="tz">
+              <option value="Europe/Brussels" selected>Brussels, Paris, Berlin, Rome, Madrid</option>
+              <option value="Europe/London">London, Dublin, Lisbon</option>
+              <option value="Europe/Athens">Athens, Helsinki, Bucharest, Kyiv</option>
+              <option value="Europe/Istanbul">Istanbul</option>
+              <option value="America/New_York">New York, Washington</option>
+              <option value="America/Los_Angeles">Los Angeles</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="allDay"><span>All day<small>No start or end time.</small></span></label>
+          <div class="row">
+            <label>Start date<input type="date" id="date"></label>
+            <label id="timeBox">Start time<input type="time" id="time"></label>
+          </div>
+          <div class="row">
+            <label>End date (if different)<input type="date" id="endDate"></label>
+            <label id="endTimeBox">End time<input type="time" id="endTime"></label>
+          </div>
+          <p class="hint" id="endNote" style="margin:0">If you leave the end empty, the event lasts one hour.</p>
+          <label>Place or online meeting link<input type="text" id="place" autocomplete="off" placeholder="e.g. Rue Montoyer 40, Brussels, or a Zoom link"></label>
+          <label>Description (optional)<textarea id="desc" spellcheck="true"></textarea></label>
+          <label>Link to the event page (optional)<input type="url" id="link" inputmode="url" autocomplete="off" placeholder="https://feps-europe.eu/…"></label>
+        </div>
+        <p class="hint error" id="msg" role="status" aria-live="polite"></p>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Get the calendar file</h2>
+        <p>The .ics file opens in Apple Calendar, Outlook on a computer and most phones. The Google and Outlook web links are on the right.</p>
+        <div class="actions"><button type="button" class="go" id="dlIcs" disabled>Download the .ics file</button></div>
+        <p id="status" role="status" aria-live="polite"></p>
+      </div></section>
+
+      <section class="step" id="step3"><div class="num" aria-hidden="true"><span>3</span></div><div>
+        <h2>Use it in a Sarbacane newsletter</h2>
+        <p>Choose the links to put in the newsletter, then copy the code and paste it in a code block of Sarbacane.</p>
+        <label class="check"><input type="checkbox" id="chkG" checked><span>Google Calendar</span></label>
+        <label class="check"><input type="checkbox" id="chkO365" checked><span>Outlook (work or school account)</span></label>
+        <label class="check"><input type="checkbox" id="chkOL"><span>Outlook.com (personal account)</span></label>
+        <label class="check"><input type="checkbox" id="chkIcs"><span>Calendar file (.ics)<small>Only works if the file is online. Put it first in the website media library, then paste its address below.</small></span></label>
+        <div class="fields" id="icsBox" hidden>
+          <label>Address of the .ics file once it is online<input type="url" id="icsUrl" inputmode="url" autocomplete="off" placeholder="https://feps-europe.eu/…/event.ics"></label>
+        </div>
+        <label class="sr" for="snippet">HTML code for Sarbacane</label>
+        <textarea class="code" id="snippet" readonly spellcheck="false" placeholder="The code will appear here once the event is filled in."></textarea>
+        <div class="actions"><button type="button" class="alt" id="copySnippet" disabled>Copy the code</button><span id="copied" role="status" aria-live="polite"></span></div>
+      </div></section>
+    </div>
+
+    <aside class="preview" aria-label="Result">
+      <div id="empty" class="empty">Fill in the title and the start date to see your links here.</div>
+      <div id="out" hidden>
+        <p class="summary" id="summary"></p>
+        <h2>Links</h2>
+        <ul class="links" id="links"></ul>
+        <p class="caption">Click “Open” to test a link before you use it.</p>
+      </div>
+    </aside>
+  </main>
+
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Which link should I put in a newsletter?</summary><div><p>The Google Calendar and Outlook links work directly, nothing to upload. The .ics file works for Apple Calendar and Outlook on a computer, but it must be put online first, because a newsletter cannot carry a file by itself.</p></div></details>
+    <details><summary>Which time zone should I choose?</summary><div><p>The one where the event takes place. Each person then sees the event at the right time in their own calendar. Brussels, Paris, Berlin, Rome and Madrid share the same time.</p></div></details>
+    <details><summary>The Outlook link does not open my work calendar</summary><div><p>There are two Outlook links: one for work or school accounts (Microsoft 365) and one for personal accounts (Outlook.com, Hotmail). Use the one that matches the account.</p></div></details>
+    <details><summary>Can I add a reminder or invite people?</summary><div><p>Not here. The person who adds the event can set their own reminder in their calendar.</p></div></details>
+    <details><summary>Is my text sent anywhere?</summary><div><p>No. Everything is made inside your browser and nothing is sent online.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: what you type never leaves your computer.</footer>
+</div>
+<script src="calendar.js"></script>
+</body>
+</html>

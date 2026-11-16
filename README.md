@@ -10,6 +10,7 @@ On the home page the tools are grouped by type, with a title per group.
 |---|---|---|---|
 | Events | Nameplates generator | `nameplates/` | Turns a list of names into a PowerPoint with one slide per name, ready to print as folded table nameplates. |
 | Events | Registration list | `registration/` | Turns the registrations exported from the website (Excel) into the printable signature list (Word). |
+| Events | Add to calendar | `calendar/` | Makes an .ics file and Google / Outlook "add to calendar" links for an event, plus ready-to-paste HTML for Sarbacane. |
 | Newsletter and website | Sarbacane code cleaner | `sarbacane/` | Applies 4 fixed replacements to the raw HTML of a Sarbacane newsletter. |
 | Newsletter and website | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
 | Images | Image resizer | `imageresizer/` | Crops, resizes, compresses or changes the format of an image for the website, the newsletter or social media. |
@@ -34,6 +35,7 @@ registration/  registration.html + registration.js  (+ Registration_template.doc
 sarbacane/     sarbacane.html + sarbacane.js
 imageresizer/  imageresizer.html + imageresizer.js
 qrcode/        qrcode.html + qrcode.js  (+ logo_FEPS.png)
+calendar/      calendar.html + calendar.js
 cleaner/       cleaner.html + cleaner.js
 pdf/           pdf.html + pdf.js
 blur/          blur.html + blur.js
@@ -79,6 +81,13 @@ Rules of the structure:
 - The logo is placed in the bottom-right corner by default (or in the middle), at 10 to 25% of the code width, and two sliders ("Move up", "Sideways") fine-tune its position. By default the code squares are removed only where the visible part of the logo (plus one square around it) is, so the transparent parts of the logo are respected; "Plain square" clears a rectangle instead. A warning appears if the logo hides too much of the code.
 - Colours and image size are adjustable, with a low-contrast warning.
 - Output: PNG, or SVG (vector, for print, logo embedded).
+
+**Add to calendar**
+- One event form: title, time zone of the event (Brussels by default), start date and time (or "All day"), optional end (empty = one hour, or one day if all day), place or online link, description and event page link.
+- Times are converted from the chosen time zone to UTC with `Intl`, so summer and winter time are handled. The .ics file and the Google link use UTC times; every person then sees the event at the right time in their own calendar.
+- Output: the .ics file (CRLF lines, text escaped, long lines folded), a Google Calendar link, an Outlook link for work or school accounts (outlook.office.com) and one for personal accounts (outlook.live.com), each with "Open" and "Copy the link".
+- Sarbacane: the page builds a small HTML block with the links the user ticks. The .ics link only appears once the user pastes the address of the file after putting it online (for example in the website media library), because a newsletter cannot carry a file by itself.
+- The links follow the public formats of Google and Microsoft; they should be tested with a real account when something changes on their side.
 
 **List cleaner**
 - Reads the first sheet of an .xlsx, or a CSV (comma, semicolon or tab). The first row must hold the column titles.
