@@ -7,6 +7,10 @@
 <link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
 <meta name="description" content="Turn a list of names into a PowerPoint with one slide per name, using your own nameplate template. Runs entirely in your browser.">
 <link rel="stylesheet" href="../assets/style.css">
+<style>
+.check{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-weight:600}
+.check input{margin-top:5px;accent-color:var(--red)}
+</style>
 <script src="../assets/jszip.min.js"></script>
 </head>
 <body>
@@ -25,9 +29,13 @@
         <div class="num" aria-hidden="true"><span>1</span></div>
         <div>
           <h2>Add your logos</h2>
-          <p>The FEPS logo is already on the nameplate. If other organisations take part in your event, add their logos here (PNG or JPG, up to 5). They are placed after the FEPS logo, from left to right, in the order you add them. A PNG with a transparent background looks best.</p>
+          <label class="check"><input type="checkbox" id="noLogo"><span>No logo at all (not even FEPS)</span></label>
+          <p id="noLogoNote" class="hint" style="margin:-6px 0 12px"></p>
+          <div id="logoBox">
+          <p>The FEPS logo is already on the nameplate. If other organisations take part in your event, add their logos here (PNG or JPG, up to 10). They are placed after the FEPS logo, from left to right, in the order you add them. With more than 5 logos in total (FEPS included), they go on two rows. A PNG with a transparent background looks best.</p>
           <label class="addlogo"><input type="file" id="logos" accept=".png,.jpg,.jpeg,image/png,image/jpeg" multiple>Add logos</label>
           <ul class="logolist" id="logoList"></ul>
+          </div>
           <p class="hint" id="designNote">Loading the nameplate design…</p>
           <details>
             <summary>Use a different nameplate design</summary>
@@ -50,7 +58,7 @@
           <h2>Paste your names</h2>
           <p>Type or paste one name per line, then press Enter after each one.</p>
           <label class="addlogo"><input type="file" id="namesFile" accept=".xlsx,.csv,.txt">Load names from an Excel file</label>
-          <p class="hint" id="namesFileNote">Optional: only the columns “Name” and “Last name” are used. The names fill the box below, where you can still edit them.</p>
+          <p class="hint" id="namesFileNote">Optional: the columns “Name” and “Last name” are used, or one column holding the full name. The names fill the box below, where you can still edit them.</p>
           <label class="sr" for="names">Names, one per line</label>
           <textarea id="names" spellcheck="false" placeholder="Andreas SCHIEDER&#10;* Ania Skrzypek, Director for Research and Training, FEPS&#10;- Anna Pacześniak, Wrocław University"></textarea>
           <button type="button" class="linkbtn" id="example">Fill in example names</button>
@@ -102,7 +110,7 @@
     <details><summary>Are my names or my file uploaded anywhere?</summary><div><p>No. Everything happens inside your browser, on your computer. Nothing is sent or stored online.</p></div></details>
     <details><summary>A name is too long and does not fit on the card</summary><div><p>Open the downloaded file and make the font a little smaller on that slide, or shorten the name here and create the file again.</p></div></details>
     <details><summary>I clicked “Create nameplates” but nothing downloaded</summary><div><p>Check your Downloads folder first. If it is not there, your browser may have blocked the download: allow it in the address bar, or try another browser.</p></div></details>
-    <details><summary>Can I remove or replace a logo that is already in my template?</summary><div><p>Yes, but do it in PowerPoint, before using the template here: right-click the logo, choose “Change Picture” (or press Delete to remove it). Do it for both copies, the upright one and the upside-down one.</p></div></details>
+    <details><summary>Can I remove or replace a logo that is already in my template?</summary><div><p>For no logo at all, tick “No logo at all” in step 1. To replace one logo, do it in PowerPoint, before using the template here: right-click the logo, choose “Change Picture” (or press Delete to remove it). Do it for both copies, the upright one and the upside-down one.</p></div></details>
     <details><summary>Can I edit the slides afterwards?</summary><div><p>Yes. The result is a normal PowerPoint file, so you can change anything before printing.</p></div></details>
     <details><summary>I get a message saying my file cannot be read</summary><div><p>Make sure it is a PowerPoint file ending in .pptx (not .ppt, .key or a PDF). In PowerPoint, use File &gt; Save As and choose “PowerPoint Presentation (.pptx)”.</p></div></details>
   </section>
@@ -110,6 +118,7 @@
   <footer>Everything runs in your browser: your template and your names never leave your computer.</footer>
 </div>
 <script src="../assets/table.js"></script>
+<script src="../assets/people.js"></script>
 <script src="nameplates.js"></script>
 </body>
 </html>

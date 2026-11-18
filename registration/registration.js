@@ -2,9 +2,9 @@
 const $ = id => document.getElementById(id);
 const els = { logos: $("logos"), logoList: $("logoList") };
 const NOFOLDERS = { createFolders: false };
-const MAX_EXTRA = 5, BLANK_ROWS = 12;
+const MAX_EXTRA = 5, BLANK_ROWS = 12, SMALL = 0.65;   // extra logos are 65% of the height of the FEPS logo
 const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-let extras = [], people = [], leftOut = [], templateBuf = null;
+let extras = [], people = [], templateBuf = null;
 
 function setStatus(t, k) { $("status").textContent = t; $("status").className = k || ""; }
 function refreshButton() {
@@ -15,46 +15,59 @@ function refreshButton() {
   $("step4").classList.toggle("ready", !$("go").disabled);
 }
 
-/* ---------- Keep STATUS = Allow (or no status), sorted by last name ---------- */
-function analyse(rows) {
-  const hdr = (rows[0] || []).map(norm), find = names => hdr.findIndex(h => names.includes(h));
-  const ix = { first: find(["name", "firstname"]), last: find(["lastname", "surname", "familyname"]), org: find(["organisation", "organization"]), status: find(["status"]), event: find(["event"]) };
-  const missing = [["first", "Name"], ["last", "Last name"], ["org", "Organisation"]].filter(([k]) => ix[k] < 0).map(x => x[1]);
-  if (missing.length) throw new Error("Couldn't find these columns: " + missing.join(", ") + ". Please check that you chose the registrations export.");
-  const all = rows.slice(1).map(r => ({ first: clean(r[ix.first]), last: clean(r[ix.last]), org: clean(r[ix.org]), status: ix.status < 0 ? "" : clean(r[ix.status]), event: clean(r[ix.event]) })).filter(p => p.first || p.last);
-  const keep = p => !p.status || p.status.toLowerCase() === "allow";
-  people = all.filter(keep);
-  leftOut = all.filter(p => !keep(p));
-  const cmp = (a, b) => a.localeCompare(b, "en", { sensitivity: "base" });
-  people.sort((a, b) => cmp(a.last, b.last) || cmp(a.first, b.first));
-  if (people[0] && people[0].event && !$("evName").value.trim()) $("evName").value = people[0].event;
-}
+/* ---------- The list of people (file + pasted), sorted by last name, with a Remove button ---------- */
+const cmp = (a, b) => a.localeCompare(b, "en", { sensitivity: "base" });
 function render() {
-  $("list").replaceChildren(...people.map(p => Object.assign(document.createElement("li"), { textContent: p.first + " " + p.last + (p.org ? " (" + p.org + ")" : "") })));
+  people.sort((a, b) => cmp(a.last || a.first, b.last || b.first) || cmp(a.first, b.first));
+  $("list").replaceChildren(...people.map(p => {
+    const li = document.createElement("li");
+    const btn = Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "Remove" });
+    btn.style.cssText = "float:right;margin:0";
+    btn.setAttribute("aria-label", "Remove " + p.first + " " + p.last);
+    btn.addEventListener("click", () => { people = people.filter(x => x !== p); render(); });
+    li.append(btn, document.createTextNode((p.first + " " + p.last).trim() + (p.org ? " (" + p.org + ")" : "")));
+    return li;
+  }));
   $("count").textContent = people.length ? people.length + (people.length === 1 ? " person" : " people") : "";
-  $("summary").textContent = people.length || leftOut.length ? people.length + " kept (status “Allow” or no status), " + leftOut.length + " left out." : "";
-  $("leftBox").hidden = !leftOut.length;
-  $("leftList").replaceChildren(...leftOut.map(p => Object.assign(document.createElement("li"), { textContent: p.first + " " + p.last + " (status: " + (p.status || "empty") + ")" })));
   refreshButton();
 }
 async function loadFile(file) {
   if (!file) return;
   setStatus("");
   try {
-    analyse(/\.xlsx$/i.test(file.name) ? await readXlsx(await file.arrayBuffer()) : readCsv(await file.text()));
+    const { people: found, event } = readPeople(/\.xlsx$/i.test(file.name) ? await readXlsx(await file.arrayBuffer()) : readCsv(await file.text()));
+    people = people.filter(p => p.src !== "file").concat(found.map(p => Object.assign(p, { src: "file" })));
+    if (event && !$("evName").value.trim()) $("evName").value = event;
     $("fileMain").textContent = file.name; $("fileSub").textContent = "Click to change."; $("drop").classList.add("loaded");
-    if (!people.length) setStatus("No one to list in this file.", "error");
+    if (!found.length) setStatus("No one found in this file.", "error");
   } catch (e) {
-    people = []; leftOut = []; $("drop").classList.remove("loaded");
+    $("drop").classList.remove("loaded");
     setStatus(/Couldn't find/.test(e.message) ? e.message : "That file couldn't be read. Please choose an .xlsx or .csv file.", "error");
   }
   render();
 }
-$("file").addEventListener("change", () => loadFile($("file").files[0]));
+$("file").addEventListener("change", () => { loadFile($("file").files[0]); $("file").value = ""; });
 for (const ev of ["dragenter", "dragover"]) $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.add("over"); });
 for (const ev of ["dragleave", "drop"]) $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.remove("over"); });
 $("drop").addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
 for (const i of ["evName", "evDate", "evPlace"]) $(i).addEventListener("input", refreshButton);
+
+/* Pasted people: "Firstname Lastname, Organisation" per line, or cells copied from Excel (Name, Last name, Organisation). */
+function parseManual(text) {
+  return text.split(/\r?\n/).map(l => l.replace(/^\uFEFF/, "").replace(/^\s*(?:[*\-•–·]+|\d+[.)])\s*/, "").trim()).filter(Boolean).map(l => {
+    const tab = l.includes("\t"), c = (tab ? l.split("\t") : l.split(/\s*[,;]\s*/)).map(clean);
+    if (tab && c.length >= 3) return { first: c[0], last: c[1], org: c.slice(2).filter(Boolean).join(", ") };
+    return Object.assign(splitName(c[0]), { org: c.slice(1).filter(Boolean).join(", ") });
+  }).filter(p => p.first || p.last);
+}
+$("manualAdd").addEventListener("click", () => {
+  const add = parseManual($("manualText").value);
+  if (!add.length) { setStatus("Type or paste at least one name first.", "error"); return; }
+  setStatus("");
+  people = people.concat(add.map(p => Object.assign(p, { src: "manual" })));
+  $("manualText").value = ""; render();
+  setStatus(add.length + (add.length === 1 ? " person added to the list." : " people added to the list."), "ok");
+});
 
 /* ---------- Logos ---------- */
 function renderLogos() {
@@ -88,25 +101,50 @@ els.logos.addEventListener("change", async () => {
 /* ---------- Building the Word document ---------- */
 const strip = x => x.replace(/ w14:(?:paraId|textId)="[^"]*"/g, "").replace('w:hRule="exact"', 'w:hRule="atLeast"');
 const PB = '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="2"/></w:rPr><w:br w:type="page"/></w:r></w:p>';
+/* "organizers" -> "organisers" (also when Word has split the word over several pieces) */
+const britishise = x => x.replace(/(organi)((?:<[^>]*>)*)z(ers)/gi, "$1$2s$3");
+/* Adds bold to a run-properties block (kept in the order Word expects) */
+function bold(rpr) {
+  rpr = rpr.replace(/<w:b w:val="(?:0|false)"\/>/, "");
+  if (/<w:b\/>/.test(rpr)) return rpr;
+  if (!rpr) return "<w:rPr><w:b/></w:rPr>";
+  if (/<w:rFonts\b[^>]*\/>/.test(rpr)) return rpr.replace(/(<w:rFonts\b[^>]*\/>)/, "$1<w:b/>");
+  if (/<w:rStyle\b[^>]*\/>/.test(rpr)) return rpr.replace(/(<w:rStyle\b[^>]*\/>)/, "$1<w:b/>");
+  return rpr.replace("<w:rPr>", "<w:rPr><w:b/>");
+}
 
 async function buildDoc() {
   const zip = await JSZip.loadAsync(templateBuf);
   const read = p => zip.file(p).async("string");
-  let doc = await read("word/document.xml");
+  let doc = britishise(await read("word/document.xml"));
   const tbl = /<w:tbl>[\s\S]*?<\/w:tbl>/.exec(doc)[0];
   const rows = tbl.match(/<w:tr\b[\s\S]*?<\/w:tr>/g);
-  const head = strip(rows[0]), blank = strip(rows[1]), open = tbl.slice(0, tbl.indexOf(rows[0]));
+  let open = tbl.slice(0, tbl.indexOf(rows[0]));
+
+  // Wider signature column (the last one): it grows to 160% of its width, at most 45% of the table; the others shrink.
+  const grid = [...open.matchAll(/<w:gridCol w:w="(\d+)"/g)].map(m => +m[1]);
+  let newW = null;
+  if (grid.length >= 3 && (rows[0].match(/<w:tcW w:w="\d+"/g) || []).length === grid.length) {
+    const tot = grid.reduce((a, b) => a + b, 0), lastW = grid[grid.length - 1], sig = Math.min(Math.round(tot * 0.45), Math.round(lastW * 1.6)), k = (tot - sig) / (tot - lastW);
+    if (sig > lastW) newW = grid.map((w, i) => i === grid.length - 1 ? sig : Math.round(w * k));
+  }
+  const reW = x => { if (!newW) return x; let i = 0; return x.replace(/<w:tcW w:w="\d+"/g, m => i < newW.length ? '<w:tcW w:w="' + newW[i++] + '"' : m); };
+  if (newW) { let j = 0; open = open.replace(/<w:gridCol w:w="\d+"/g, m => '<w:gridCol w:w="' + newW[j++] + '"'); }
+  const head = reW(strip(rows[0])), blank = reW(strip(rows[1]));
+
+  // First name and last name in bold
   const fill = vals => { let i = 0; return blank.replace(/<w:p\b[\s\S]*?<\/w:p>/g, p => {
-    const v = vals[i++]; if (!v) return p;
-    const rpr = (/<w:pPr>[\s\S]*?(<w:rPr>[\s\S]*?<\/w:rPr>)[\s\S]*?<\/w:pPr>/.exec(p) || [, ""])[1];
-    return p.replace("</w:p>", '<w:r>' + rpr + '<w:t xml:space="preserve">' + esc(v) + "</w:t></w:r></w:p>");
+    const idx = i++, v = vals[idx]; if (!v) return p;
+    let rpr = (/<w:pPr>[\s\S]*?(<w:rPr>[\s\S]*?<\/w:rPr>)[\s\S]*?<\/w:pPr>/.exec(p) || [, ""])[1];
+    if (idx < 2) rpr = bold(rpr);
+    return p.replace("</w:p>", () => '<w:r>' + rpr + '<w:t xml:space="preserve">' + esc(v) + "</w:t></w:r></w:p>");
   }); };
   const blankTbl = open + head + blank.repeat(BLANK_ROWS) + "</w:tbl>";
   const table = open + head + people.map(p => fill([p.first, p.last, p.org])).join("") + "</w:tbl>" + PB + blankTbl + PB + blankTbl;
   zip.file("word/document.xml", doc.replace(tbl, () => table), NOFOLDERS);
 
   // Header: event name, date, location (+ extra logos next to the FEPS logo)
-  let hd = await read("word/header2.xml");
+  let hd = britishise(await read("word/header2.xml"));
   const put = (from, to) => { hd = hd.replace(from, () => to); };
   put("[EVENT NAME]", esc($("evName").value.trim()));
   put("[DATE]", esc($("evDate").value.trim()));
@@ -114,12 +152,12 @@ async function buildDoc() {
   let types = await read("[Content_Types].xml");
   if (extras.length) {
     const base = /<w:drawing>[\s\S]*?<\/w:drawing>/.exec(hd)[0];
-    const H0 = 544195, X0 = 1996440 + 250000, gap = 150000, avail = 9072 * 635 - X0;
-    const widths = extras.map(e => H0 * e.w / e.h);
+    const H0 = 544195, HS = H0 * SMALL, X0 = 1996440 + 250000, gap = 150000, avail = 9072 * 635 - X0;
+    const widths = extras.map(e => HS * e.w / e.h);
     const k = Math.min(1, avail / (widths.reduce((a, b) => a + b, 0) + gap * (extras.length - 1)));
     let x = X0, runs = "", rels = await read("word/_rels/header2.xml.rels"), relXml = "";
     extras.forEach((e, i) => {
-      const w = Math.round(widths[i] * k), h = Math.round(H0 * k), y = -102447 + Math.round((H0 - h) / 2);
+      const w = Math.round(widths[i] * k), h = Math.round(HS * k), y = -102447 + Math.round((H0 - h) / 2);
       const rid = "rIdLogo" + (i + 1), file = "logo_extra_" + (i + 1) + "." + e.ext, nm = "Logo " + (i + 2);
       zip.file("word/media/" + file, e.bytes, NOFOLDERS);
       relXml += '<Relationship Id="' + rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + file + '"/>';
@@ -139,7 +177,7 @@ async function buildDoc() {
   zip.file("word/header2.xml", hd, NOFOLDERS);
 
   // Footer: the total number of pages was typed in by hand ("/4"): make it automatic
-  let ft = await read("word/footer2.xml");
+  let ft = britishise(await read("word/footer2.xml"));
   const R = '<w:r><w:rPr><w:rStyle w:val="PageNumber"/></w:rPr>';
   ft = ft.replace(/<w:r\b[^>]*><w:rPr><w:rStyle w:val="PageNumber"\/><\/w:rPr><w:t>4<\/w:t><\/w:r>/, () =>
     R + '<w:fldChar w:fldCharType="begin"/></w:r>' + R + '<w:instrText xml:space="preserve">NUMPAGES  </w:instrText></w:r>' + R + '<w:fldChar w:fldCharType="separate"/></w:r>' + R + "<w:t>4</w:t></w:r>" + R + '<w:fldChar w:fldCharType="end"/></w:r>');

@@ -59,16 +59,22 @@ function setName(xml, name) {
   });
 }
 
-/* ---------- Extra logos ---------- */
+/* ---------- Logos ---------- */
 const REL_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+const ROW_LIMIT = 5;   // more than 5 logos in total: they go on two rows
 
+/* One row up to 5 logos, two rows above that. `off` = vertical shift of the logo's row, in EMU, for the upright copy
+   (the upside-down copy gets the opposite shift). */
 function layoutLogos(logos, W, H) {
-  const n = logos.length, M = Math.round(W * 0.07), gap = Math.round(W * 0.02);
-  const cw = (W - 2 * M) / n, hMax = H * 0.107;
+  const n = logos.length, rows = n > ROW_LIMIT ? 2 : 1, perRow = Math.ceil(n / rows);
+  const M = Math.round(W * 0.07), gap = Math.round(W * 0.02);
+  const hMax = rows === 2 ? H * 0.085 : H * 0.107, spacing = H * 0.095;
   return logos.map((l, i) => {
+    const row = Math.floor(i / perRow), inRow = Math.min(perRow, n - row * perRow), idx = i - row * perRow;
+    const cw = (W - 2 * M) / inRow;
     const k = Math.min((cw - gap) / l.w, hMax / l.h);
     const cx = Math.round(l.w * k), cy = Math.round(l.h * k);
-    return { cx, cy, x: Math.round(M + cw * i + (cw - cx) / 2) };
+    return { cx, cy, x: Math.round(M + cw * idx + (cw - cx) / 2), off: rows === 2 ? Math.round((row - 0.5) * spacing) : 0 };
   });
 }
 function withGeom(p, x, y, cx, cy, rot, id, name) {
@@ -83,7 +89,7 @@ function withGeom(p, x, y, cx, cy, rot, id, name) {
 function newPic(id, name, rid, rot, x, y, cx, cy) {
   return '<p:pic><p:nvPicPr><p:cNvPr id="' + id + '" name="' + name + '"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm' + (rot ? ' rot="10800000"' : "") + '><a:off x="' + x + '" y="' + y + '"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>';
 }
-/* Re-lays out all logos of the model slide in one row (upright) and its upside-down copy, adding the extra logos. */
+/* Re-lays out all logos of the model slide (upright) and its upside-down copy, adding the extra logos. */
 function addLogos(xml, rels, types, zip, extras, W, H) {
   const pics = [...xml.matchAll(/<p:pic>[\s\S]*?<\/p:pic>/g)].map(m => m[0]);
   let nextId = Math.max(1, ...[...xml.matchAll(/<p:cNvPr\b[^>]*?\bid="(\d+)"/g)].map(m => +m[1])) + 1;
@@ -95,7 +101,7 @@ function addLogos(xml, rels, types, zip, extras, W, H) {
   const yU = Math.round(H * 0.635), yR = Math.round(H * 0.414);
   let relXml = "", out = "";
   logos.forEach((l, i) => {
-    const { x, cx, cy } = pos[i], yu = yU - Math.round(cy / 2), yr = yR - Math.round(cy / 2), xr = W - x - cx;
+    const { x, cx, cy, off } = pos[i], yu = yU + off - Math.round(cy / 2), yr = yR - off - Math.round(cy / 2), xr = W - x - cx;
     const label = "Logo " + (i + 1);
     if (i < base.length) {
       out += withGeom(base[i].xml, x, yu, cx, cy, false, null, "") + withGeom(base[i].xml, xr, yr, cx, cy, true, nextId++, label + " (rotated)");
@@ -115,7 +121,7 @@ function addLogos(xml, rels, types, zip, extras, W, H) {
 
 const NOFOLDERS = { createFolders: false };
 
-async function buildDeck(buffer, names, extras = []) {
+async function buildDeck(buffer, names, extras = [], noLogo = false) {
   const zip = await JSZip.loadAsync(buffer);
   const read = async p => {
     const f = zip.file(p);
@@ -139,7 +145,9 @@ async function buildDeck(buffer, names, extras = []) {
     types = types.replace(new RegExp('<Override\\b[^>]*PartName="/' + escapeRegex(path) + '"[^>]*/>'), "");
   };
 
-  if (extras.length) {
+  if (noLogo) {
+    modelXml = modelXml.replace(/<p:pic>[\s\S]*?<\/p:pic>/g, "");   // no logo at all, not even FEPS
+  } else if (extras.length) {
     const W = parseInt(/<p:sldSz[^>]*\bcx="(\d+)"/.exec(pres)[1], 10), H = parseInt(/<p:sldSz[^>]*\bcy="(\d+)"/.exec(pres)[1], 10);
     ({ xml: modelXml, rels: modelRels, types } = addLogos(modelXml, modelRels, types, zip, extras, W, H));
     zip.file(modelRelsPath, modelRels, NOFOLDERS);
@@ -204,7 +212,7 @@ const els = {
 };
 els.logos = $("logos"); els.logoList = $("logoList"); els.note = $("designNote");
 let extras = [];
-const MAX_EXTRA = 5;
+const MAX_EXTRA = 10;
 let templateBuffer = null;
 let templateName = "";
 
@@ -215,7 +223,7 @@ function setStatus(text, kind) {
 function refreshButton() {
   const hasNames = parseNames(els.names.value).length > 0;
   els.go.disabled = !(templateBuffer && hasNames);
-  $("step1").classList.toggle("done", extras.length > 0);
+  $("step1").classList.toggle("done", extras.length > 0 || $("noLogo").checked);
   $("step2").classList.toggle("done", hasNames);
   $("step3").classList.toggle("ready", !!templateBuffer && hasNames);
 }
@@ -267,11 +275,11 @@ els.drop.addEventListener("drop", e => loadTemplate(e.dataTransfer.files[0]));
 els.names.addEventListener("input", refreshNames);
 
 els.go.addEventListener("click", async () => {
-  const names = parseNames(els.names.value);
+  const names = parseNames(els.names.value), noLogo = $("noLogo").checked;
   els.go.disabled = true;
   setStatus("Creating " + names.length + (names.length === 1 ? " nameplate…" : " nameplates…"));
   try {
-    const blob = await buildDeck(templateBuffer, names, extras);
+    const blob = await buildDeck(templateBuffer, names, extras, noLogo);
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement("a"), { href: url, download: "Nameplates_final.pptx" });
     document.body.appendChild(a); a.click(); a.remove();
@@ -281,6 +289,15 @@ els.go.addEventListener("click", async () => {
   } catch (e) {
     setStatus("Something went wrong: " + e.message, "error");
   }
+  refreshButton();
+});
+
+/* "No logo at all": the logos are removed from the nameplates, so adding logos is switched off. */
+$("noLogo").addEventListener("change", () => {
+  const off = $("noLogo").checked;
+  els.logos.disabled = off;
+  $("logoBox").style.opacity = off ? ".5" : "";
+  $("noLogoNote").textContent = off ? "The nameplates will have no logo at all, not even FEPS." : "";
   refreshButton();
 });
 
@@ -323,23 +340,20 @@ $("example").addEventListener("click", () => {
   els.names.focus();
 });
 
-/* Names from an Excel / CSV file: only the columns Name and Last name are used. */
+/* Names from an Excel / CSV file: "Name" + "Last name", or one column holding the full name. */
 $("namesFile").addEventListener("change", async () => {
   const file = $("namesFile").files[0], note = $("namesFileNote");
   if (!file) return;
   note.className = "hint";
   try {
-    const rows = await readTable(file), hdr = (rows[0] || []).map(norm);
-    const find = list => hdr.findIndex(h => list.includes(h));
-    const f = find(["name", "firstname"]), l = find(["lastname", "surname", "familyname"]);
-    if (f < 0 || l < 0) { note.textContent = "Couldn't find the columns “Name” and “Last name” (or “Surname”) on the first row of the file."; note.className = "hint error"; return; }
-    const lines = rows.slice(1).map(r => (clean(r[f]) + " " + clean(r[l])).trim()).filter(Boolean);
+    const { people } = readPeople(await readTable(file));
+    const lines = people.map(p => (p.first + " " + p.last).trim()).filter(Boolean);
     if (!lines.length) { note.textContent = "No names found in this file."; note.className = "hint error"; return; }
     els.names.value = lines.join("\n");
     refreshNames();
     note.textContent = lines.length + (lines.length === 1 ? " name" : " names") + " loaded from " + file.name + ". You can still edit them below.";
   } catch (e) {
-    note.textContent = "That file couldn't be read. Please choose an .xlsx or .csv file."; note.className = "hint error";
+    note.textContent = /Couldn't find/.test(e.message) ? e.message : "That file couldn't be read. Please choose an .xlsx or .csv file."; note.className = "hint error";
   } finally { $("namesFile").value = ""; }
 });
 
