@@ -21,8 +21,3 @@
   - Scaled the signature column width to **160%** of its original width, capped at **45%** of the total table width (assuming it is the last column).
   - Scaled added logos to **65%** of the FEPS logo height.
   - Replaced `"organizers"` with `"organisers"` across the document body, header, and footer.
-
-### Notes / Known Caveats
-- **Nameplates FEPS logo**: If the FEPS logo is embedded in the PowerPoint slide layout rather than on the slide itself, the `"No logo at all"` option will not remove it—verify against the template.
-- **Nameplates row spacing**: Visual spacing between the two logo rows should be double-checked against the `.pptx` template.
-- **Registration template spelling**: If Word split `"organizers"` across multiple XML runs in `Registration_template.docx`, the automated replacement may miss it; update the template file directly for a permanent fix.
