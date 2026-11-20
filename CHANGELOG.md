@@ -21,3 +21,4 @@
   - Scaled the signature column width to **160%** of its original width, capped at **45%** of the total table width (assuming it is the last column).
   - Scaled added logos to **65%** of the FEPS logo height.
   - Replaced `"organizers"` with `"organisers"` across the document body, header, and footer.
+

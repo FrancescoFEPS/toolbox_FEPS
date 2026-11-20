@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flickr link maker</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.fields{display:grid;gap:12px}
+.fields label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+.fields input{font:inherit;font-weight:400;padding:10px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;color:var(--ink);min-width:0;width:100%}
+.fields input:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-color:var(--ink)}
+textarea.code{min-height:110px;font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+.result{padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--red);border-radius:var(--r);overflow-wrap:anywhere}
+.result a{color:var(--red-dark);font-weight:600}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>Flickr link maker</h1>
+    <p class="lede">Paste a link and its title, and get the code of a link with the 🔗 emoji, ready to paste in a Flickr description.</p>
+    <p class="how">How it works: you type the address and the text of the link. The page writes the code for you, always in the same way, and you copy it.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Give the link</h2>
+        <div class="fields">
+          <label>Link (web address)<input type="text" id="link" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://feps-europe.eu/event/…"></label>
+          <label>Text of the link<input type="text" id="text" autocomplete="off" placeholder="e.g. Book launch: Governing the welfare commons"></label>
+        </div>
+        <p class="hint" id="msg" role="status" aria-live="polite">The address is copied exactly as you type it. If it starts without https://, the page adds it.</p>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Copy the code</h2>
+        <label class="sr" for="out">Code of the link</label>
+        <textarea class="code" id="out" readonly spellcheck="false" placeholder="The code will appear here."></textarea>
+        <div class="actions"><button type="button" class="go" id="copy" disabled>Copy the code</button><span id="copied" role="status" aria-live="polite"></span></div>
+        <p class="hint">Then paste it in the description of your photo on Flickr.</p>
+      </div></section>
+    </div>
+    <aside class="preview" aria-label="Preview">
+      <div id="empty" class="empty">Your link will appear here once you fill in the two boxes.</div>
+      <p class="result" id="result" hidden></p>
+      <p class="caption">This is how the link will look. Click it to check that it opens the right page.</p>
+    </aside>
+  </main>
+
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>What does the code look like?</summary><div><p>It is the emoji, then the link: 🔗 followed by a link whose text is the one you typed. The link opens with <code>rel="noreferrer nofollow"</code>, as in your example.</p></div></details>
+    <details><summary>My address ends with two slashes (//)</summary><div><p>The page does not change the address you type, so check it before copying: a double slash at the end can sometimes lead to an error page.</p></div></details>
+    <details><summary>Does it work for several links?</summary><div><p>Make the code once per link and paste them one under the other in the description.</p></div></details>
+    <details><summary>Is my text sent anywhere?</summary><div><p>No. Everything is made inside your browser and nothing is sent online.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: what you type never leaves your computer.</footer>
+</div>
+<script src="flickr.js"></script>
+</body>
+</html>
