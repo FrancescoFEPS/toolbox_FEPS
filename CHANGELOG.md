@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1] - 2026-11-20
+
+### Added
+- **Flickr link maker** (`flickr/flickr.html`, `flickr/flickr.js`): paste a link and its title, and get the code `🔗 <a href="…" rel="noreferrer nofollow">…</a>` to paste in a Flickr description. Includes a copy button and a preview of the link.
+  - A link typed without `https://` gets it added; the rest of the address is kept exactly as typed.
+  - The address and the title are escaped, so quotes or `&` cannot break the code.
+- **Home page** (`index.html`): new "Flickr link maker" card, in the Images group.
+
 ## [1.0.0] - 2026-11-20
 
 ### Added
@@ -21,4 +29,3 @@
   - Scaled the signature column width to **160%** of its original width, capped at **45%** of the total table width (assuming it is the last column).
   - Scaled added logos to **65%** of the FEPS logo height.
   - Replaced `"organizers"` with `"organisers"` across the document body, header, and footer.
-
