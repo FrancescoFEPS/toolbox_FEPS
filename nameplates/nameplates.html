@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nameplates generator</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<meta name="description" content="Turn a list of names into a PowerPoint with one slide per name, using your own nameplate template. Runs entirely in your browser.">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.check{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-weight:600}
+.check input{margin-top:5px;accent-color:var(--red)}
+</style>
+<script src="../assets/jszip.min.js"></script>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>Nameplates generator</h1>
+    <p class="lede">Make a PowerPoint of table nameplates in under a minute: one slide per person, all with the same design.</p>
+    <p class="how">How it works: you give this page the logos and a list of names. It copies the nameplate design once for each name and gives you back a ready-to-print PowerPoint file.</p>
+  </header>
+
+  <main>
+    <div class="steps">
+      <section class="step" id="step1">
+        <div class="num" aria-hidden="true"><span>1</span></div>
+        <div>
+          <h2>Add your logos</h2>
+          <label class="check"><input type="checkbox" id="noLogo"><span>No logo at all (not even FEPS)</span></label>
+          <p id="noLogoNote" class="hint" style="margin:-6px 0 12px"></p>
+          <div id="logoBox">
+          <p>The FEPS logo is already on the nameplate. If other organisations take part in your event, add their logos here (PNG or JPG, up to 10). They are placed after the FEPS logo, from left to right, in the order you add them. With more than 5 logos in total (FEPS included), they go on two rows. A PNG with a transparent background looks best.</p>
+          <label class="addlogo"><input type="file" id="logos" accept=".png,.jpg,.jpeg,image/png,image/jpeg" multiple>Add logos</label>
+          <ul class="logolist" id="logoList"></ul>
+          </div>
+          <p class="hint" id="designNote">Loading the nameplate design…</p>
+          <details>
+            <summary>Use a different nameplate design</summary>
+            <div>
+              <p>Only needed if you have your own PowerPoint design. Choose a .pptx file whose <strong>first slide</strong> is a finished nameplate with any name written on it. Other slides in the file are ignored.</p>
+              <label class="drop" id="drop">
+                <input type="file" id="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation">
+                <span class="main-line" id="fileMain">Choose a .pptx file</span>
+                <span class="sub-line" id="fileSub">or drop it here</span>
+              </label>
+              <p><strong>Tip:</strong> the name on that slide is replaced in every text box, so keep other text, such as an event title, out of text boxes on that slide. Every picture on the slide is treated as a logo.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="step" id="step2">
+        <div class="num" aria-hidden="true"><span>2</span></div>
+        <div>
+          <h2>Paste your names</h2>
+          <p>Type or paste one name per line, then press Enter after each one.</p>
+          <label class="addlogo"><input type="file" id="namesFile" accept=".xlsx,.csv,.txt">Load names from an Excel file</label>
+          <p class="hint" id="namesFileNote">Optional: the columns “Name” and “Last name” are used, or one column holding the full name. The names fill the box below, where you can still edit them.</p>
+          <label class="sr" for="names">Names, one per line</label>
+          <textarea id="names" spellcheck="false" placeholder="Andreas SCHIEDER&#10;* Ania Skrzypek, Director for Research and Training, FEPS&#10;- Anna Pacześniak, Wrocław University"></textarea>
+          <button type="button" class="linkbtn" id="example">Fill in example names</button>
+          <p class="hint">Titles and organisations are ignored: “* Ania Skrzypek, Director, FEPS” becomes “Ania Skrzypek”. Names are copied exactly as typed.</p>
+          <details>
+            <summary>How do I paste names from Excel or Google Sheets?</summary>
+            <div>
+              <p>Put the names in one column, select the cells, copy them (Cmd/Ctrl + C), click in the box above and paste (Cmd/Ctrl + V). Each cell becomes one line.</p>
+              <p>If your design shows surnames in capitals, type them that way (for example “Ania SKRZYPEK”): the page does not change capitals for you.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="step" id="step3">
+        <div class="num" aria-hidden="true"><span>3</span></div>
+        <div>
+          <h2>Create your file</h2>
+          <p>The button turns on as soon as you have pasted at least one name.</p>
+          <button type="button" class="go" id="go" disabled>Create nameplates</button>
+          <p id="status" role="status" aria-live="polite"></p>
+          <div class="after" id="after" hidden>
+            <h3>Your file is ready. What now?</h3>
+            <ol>
+              <li>Open <strong>Nameplates_final.pptx</strong> from your Downloads folder.</li>
+              <li>Look through the slides to check every name.</li>
+              <li>Print on thick paper: one slide per page, landscape, at 100% size.</li>
+              <li>Fold each sheet in half across the middle, so one name faces each side of the table.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="preview" aria-label="Preview">
+      <div class="card" aria-hidden="true">
+        <div class="half"><span class="nm flip placeholder" id="pvTop">Firstname SURNAME</span></div>
+        <div class="fold"><span>fold here</span></div>
+        <div class="half"><span class="nm placeholder" id="pvBottom">Firstname SURNAME</span></div>
+      </div>
+      <p class="caption">Preview of the first name. Each name appears twice, upright and upside down, so it can be read from both sides once the card is folded. The logos are added when the file is created.</p>
+      <div class="listhead"><h2>Slides to create</h2><span id="count"></span></div>
+      <ol id="list"></ol>
+    </aside>
+  </main>
+
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Are my names or my file uploaded anywhere?</summary><div><p>No. Everything happens inside your browser, on your computer. Nothing is sent or stored online.</p></div></details>
+    <details><summary>A name is too long and does not fit on the card</summary><div><p>Open the downloaded file and make the font a little smaller on that slide, or shorten the name here and create the file again.</p></div></details>
+    <details><summary>I clicked “Create nameplates” but nothing downloaded</summary><div><p>Check your Downloads folder first. If it is not there, your browser may have blocked the download: allow it in the address bar, or try another browser.</p></div></details>
+    <details><summary>Can I remove or replace a logo that is already in my template?</summary><div><p>For no logo at all, tick “No logo at all” in step 1. To replace one logo, do it in PowerPoint, before using the template here: right-click the logo, choose “Change Picture” (or press Delete to remove it). Do it for both copies, the upright one and the upside-down one.</p></div></details>
+    <details><summary>Can I edit the slides afterwards?</summary><div><p>Yes. The result is a normal PowerPoint file, so you can change anything before printing.</p></div></details>
+    <details><summary>I get a message saying my file cannot be read</summary><div><p>Make sure it is a PowerPoint file ending in .pptx (not .ppt, .key or a PDF). In PowerPoint, use File &gt; Save As and choose “PowerPoint Presentation (.pptx)”.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: your template and your names never leave your computer.</footer>
+</div>
+<script src="../assets/table.js"></script>
+<script src="../assets/people.js"></script>
+<script src="nameplates.js"></script>
+</body>
+</html>

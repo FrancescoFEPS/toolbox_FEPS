@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registration list</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+#step4.ready .num{background:var(--red);border-color:var(--red);color:#fff}
+.fields{display:grid;gap:12px}
+.fields label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+.fields input{font:inherit;font-weight:400;padding:10px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;color:var(--ink)}
+.fields input:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-color:var(--ink)}
+.note{margin:14px 0 0;padding:12px 14px;background:var(--tint);border-radius:var(--r);font-size:.92rem}
+textarea.manual{min-height:110px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-weight:600}
+.check input{margin-top:5px;accent-color:var(--red)}
+button.alt{font:inherit;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:var(--r);padding:9px 16px;cursor:pointer;margin-top:8px}
+button.alt:hover{background:var(--tint);border-color:var(--red)}
+#list:empty::before{content:"People will be listed here once you upload the Excel file or add names."}
+</style>
+<script src="../assets/jszip.min.js"></script>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>Registration list</h1>
+    <p class="lede">Turn the registrations exported from the website into the printable signature list.</p>
+    <p class="how">How it works: you upload the Excel file and/or paste names, remove the people you do not want, check the event details, and the page fills in the Word document for you: everyone sorted by last name, followed by 2 blank pages for guests who did not register online.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Add the people</h2>
+        <p>Upload the Excel file exported from the website (.xlsx or .csv). Everybody in the file is listed on the right, where you can remove anyone.</p>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".xlsx,.csv,.txt">
+          <span class="main-line" id="fileMain">Choose the Excel file</span>
+          <span class="sub-line" id="fileSub">or drop it here</span>
+        </label>
+        <p class="hint">The file needs a column “Name” (first name) and a column “Last name” (or “Surname”). If first and last name are in one column, that is fine too. “Organisation” is optional: it can also hold the job title, and if there is none the cell stays blank.</p>
+        <h3 style="margin:18px 0 4px;font-size:1rem">Or add names by hand</h3>
+        <p class="hint" style="margin:0 0 8px">One person per line, for example “Ania Skrzypek, FEPS”. You can also copy cells from Excel (Name, Last name, Organisation).</p>
+        <label class="sr" for="manualText">Names to add, one per line</label>
+        <textarea class="manual" id="manualText" spellcheck="false" placeholder="Andreas SCHIEDER, European Parliament&#10;Ania Skrzypek, FEPS"></textarea>
+        <button type="button" class="alt" id="manualAdd">Add these people to the list</button>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Event details</h2>
+        <p>These replace the event name, date and place at the top of the document.</p>
+        <div class="fields">
+          <label>Event name<input id="evName" autocomplete="off"></label>
+          <label>Date<input id="evDate" autocomplete="off" placeholder="e.g. 12 November 2026"></label>
+          <label>Location<input id="evPlace" autocomplete="off" placeholder="e.g. Brussels"></label>
+        </div>
+      </div></section>
+
+      <section class="step" id="step3"><div class="num" aria-hidden="true"><span>3</span></div><div>
+        <h2>Add logos (optional)</h2>
+        <label class="check"><input type="checkbox" id="noLogo"><span>No logo at all (not even FEPS)</span></label>
+        <p id="noLogoNote" class="hint" style="margin:-6px 0 12px"></p>
+        <div id="logoBox">
+        <p>The FEPS logo is already in the document header. Add the logos of other organisations (PNG or JPG, up to 5): they are placed next to it, a bit smaller, from left to right, in the order you add them.</p>
+        <label class="addlogo"><input type="file" id="logos" accept=".png,.jpg,.jpeg,image/png,image/jpeg" multiple>Add logos</label>
+        <ul class="logolist" id="logoList"></ul>
+        </div>
+      </div></section>
+
+      <section class="step" id="step4"><div class="num" aria-hidden="true"><span>4</span></div><div>
+        <h2>Create your document</h2>
+        <p>The button turns on once there is at least one person in the list.</p>
+        <button type="button" class="go" id="go" disabled>Create the Word document</button>
+        <p id="status" role="status" aria-live="polite"></p>
+        <p class="hint" id="note">Loading the Word template…</p>
+        <div class="after" id="after" hidden>
+          <h3>Your document is ready. What now?</h3>
+          <ol>
+            <li>Open <strong>Registration_List.docx</strong> from your Downloads folder.</li>
+            <li>Check the header (event name, date, location, logos) and the list.</li>
+            <li>Print it: the last 2 pages are blank, for guests who did not register online.</li>
+          </ol>
+        </div>
+      </div></section>
+    </div>
+
+    <aside class="preview" aria-label="People in the list">
+      <div class="listhead"><h2>People in the list</h2><span id="count"></span></div>
+      <ol id="list"></ol>
+      <p class="note">Sorted by last name, A to Z. Use “Remove” to take someone out. Two blank pages are added at the end of the document.</p>
+    </aside>
+  </main>
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Which columns of the Excel file are used?</summary><div><p><strong>Name</strong> (first name) and <strong>Last name</strong> (or Surname), or a single column with the full name. <strong>Organisation</strong> is optional (it may also contain the job title). Everything else is ignored. The column titles must be on the first row of the first sheet.</p></div></details>
+    <details><summary>First and last name are in the same column</summary><div><p>The page splits them. If the last name is written in capitals (“Andreas SCHIEDER”), everything in capitals is the last name; otherwise the last word is. Check the list on the right, and use “Remove” and add the person by hand if one is wrong.</p></div></details>
+    <details><summary>How do I remove someone?</summary><div><p>Click “Remove” next to their name in the list on the right. To start again, reload the page.</p></div></details>
+    <details><summary>In what order are the people listed?</summary><div><p>By last name, from A to Z (accents are ignored), then by first name.</p></div></details>
+    <details><summary>What are the 2 blank pages at the end for?</summary><div><p>For guests who did not register online: they can write their name, organisation and signature by hand. Each blank page has 12 lines.</p></div></details>
+    <details><summary>Can I edit the Word document afterwards?</summary><div><p>Yes. It is a normal Word file, so you can change anything before printing, including the event name, date and location in the header.</p></div></details>
+    <details><summary>A long organisation name does not fit</summary><div><p>The row simply gets taller to show the whole name, so nothing is cut off.</p></div></details>
+    <details><summary>The page says the Word template could not be loaded</summary><div><p>Open the page from the website link, not from a downloaded copy of the file, then refresh the page.</p></div></details>
+    <details><summary>Is the Excel file uploaded anywhere?</summary><div><p>No. Everything happens inside your browser, on your computer. As the file contains personal data, keep the Word document you create in a safe place and delete it when you no longer need it.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: the Excel file, which contains personal data, is never uploaded anywhere.</footer>
+</div>
+<script src="../assets/table.js"></script>
+<script src="../assets/people.js"></script>
+<script src="registration.js"></script>
+</body>
+</html>
