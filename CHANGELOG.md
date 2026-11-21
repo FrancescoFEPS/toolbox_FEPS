@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.2] - 2026-11-21
+
+### Added
+- **`assets/gif.js`**: shared animated GIF encoder (no library): one 256-colour table (median cut) for the whole animation, optional ordered dithering, LZW, loop extension.
+- **Video to GIF** (`gifmaker/gifmaker.html`, `gifmaker/gifmaker.js`): turns a part of a video into an animated GIF. Choose the start (or take it from the player), the length (up to 15 s), the width (up to 800 px) and the images per second; loop or play once; "smoother colours" option. Limited to 300 images and 60 million pixels in total.
+- **Home page** (`index.html`): new "Video to GIF" card, in the Images group.
+
+### Changed
+- **Image resizer** (`imageresizer/imageresizer.html`, `imageresizer/imageresizer.js`): the input now also accepts GIF (first image only, not animated), BMP, AVIF (where the browser can read it) and SVG (drawn at least 1600 px on its long side). The result is still JPG, PNG or WebP. Messages and questions updated.
+- **`README.md`**: added Video to GIF, `gif.js` and the new input formats.
+
 ## [1.0.1] - 2026-11-20
 
 ### Added

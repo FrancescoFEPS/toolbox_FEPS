@@ -15,6 +15,7 @@ On the home page the tools are grouped by type, with a title per group.
 | Newsletter and website | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
 | Images | Image resizer | `imageresizer/` | Crops, resizes, compresses or changes the format of an image for the website, the newsletter or social media. |
 | Images | Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
+| Images | Video to GIF | `gifmaker/` | Turns a short part of a video into an animated GIF (start, length, width, images per second). |
 | Images | Flickr link maker | `flickr/` | Turns a link and its title into the code of a 🔗 link to paste in a Flickr description. |
 | Lists and documents | List cleaner | `cleaner/` | Cleans an Excel/CSV list (spaces, capitals, empty rows, duplicates, wrong emails, comparison with another list). |
 | Lists and documents | PDF merge and split | `pdf/` | Merges PDFs, takes pages out of a PDF, or splits a PDF into several files. |
@@ -29,6 +30,7 @@ assets/
   style.css                shared look (all pages)
   jszip.min.js             JSZip 3.10.1, one shared copy
   table.js                 shared reader for .xlsx / .csv files (needs JSZip)
+  gif.js                   shared animated GIF encoder (no library), used by the Video to GIF tool
   people.js                shared reader for people (name, last name, organisation) from a table (needs table.js)
   pdf-lib.min.js           pdf-lib 1.17.1 (MIT), used by the PDF tool
 favicon/favicon.png
@@ -41,13 +43,14 @@ calendar/      calendar.html + calendar.js
 cleaner/       cleaner.html + cleaner.js
 pdf/           pdf.html + pdf.js
 blur/          blur.html + blur.js
+gifmaker/      gifmaker.html + gifmaker.js
 flickr/        flickr.html + flickr.js
 ```
 
 Rules of the structure:
 
 - One folder per tool: a light HTML page and one JS file. No library is pasted inside a page.
-- Script order on a page: `../assets/jszip.min.js`, then `../assets/table.js` (only if the tool reads Excel/CSV), then `../assets/people.js` (only if the tool reads people), then the tool's own JS.
+- Script order on a page: `../assets/jszip.min.js`, then `../assets/table.js` (only if the tool reads Excel/CSV), then `../assets/people.js` (only if the tool reads people), then `../assets/gif.js` (only if the tool makes GIF files), then the tool's own JS.
 - Shared look = `assets/style.css`. Only what is specific to one page goes in a small `<style>` in that page.
 - No CDN and no external request: the tools work without internet once the page is loaded.
 - `Nameplates_FEPS.pptx`, `Registration_template.docx` and `logo_FEPS.png` are loaded by the page with `fetch`, so they must stay in the same folder as their page.
@@ -74,6 +77,7 @@ Rules of the structure:
 - The template must keep: a first table whose first row is the header and second row is the blank row to copy, the three placeholders in header 2, and the hand-typed page total in footer 2.
 
 **Image resizer**
+- Input: JPG, PNG, WebP, GIF, BMP, AVIF or SVG (AVIF only where the browser can read it). A GIF gives its first image only, so the result is not animated. An SVG is drawn once at least 1600 px on its long side, so it stays sharp. HEIC is not supported yet (it would need a library in `assets/`).
 - Four modes: crop to an exact format (drag and zoom to choose what is kept), only change the size (whole image, never enlarged, width and/or height as maximums), exact format with a background added (colour or transparent), and **keep the original size and change only the file type** (the width and height fields are hidden; the image is re-saved as JPG, PNG or WebP at its own size).
 - Output as JPG, PNG or WebP, with a quality setting. The weight is shown before and after. When a transparent PNG is saved as JPG, the transparent parts become white.
 - Ready-made formats are listed in `PRESETS` at the top of `imageresizer.js`: add or edit lines there. Sizes are limited to 8000 px on a side (this limit does not apply to the "keep the original size" mode).
@@ -107,6 +111,11 @@ Rules of the structure:
 - Images only (JPG, PNG, WebP). The user drags rectangles on the image; each is pixelated, blurred or covered with a black box. The result is a flat new image, so the hidden pixels cannot be recovered, and the original's metadata (EXIF, GPS) is not copied.
 - Pixelate and blur are drawn by shrinking and enlarging the zone (no `ctx.filter`, so it also works in Safari). Strength is one setting for all pixelate/blur zones.
 - Not done yet: PDFs (idea: render each page to an image with pdf.js, hide, rebuild).
+
+**Video to GIF**
+- The user chooses a video (MP4, MOV or WebM, whatever the browser can play), then the start (a button takes the current position of the player), the length (up to 15 s), the width (100 to 800 px, never larger than the video) and the images per second (5 to 20). Options: loop or play once, and "smoother colours" (ordered dithering, heavier file).
+- The page seeks the video image by image, draws each one on a canvas and builds the GIF with `assets/gif.js`: one 256-colour table for the whole animation (median cut), GIF-style LZW, delay in hundredths of a second, loop extension. No sound.
+- Limits: 300 images and 60 million pixels in total (width × height × images), so the browser does not run out of memory. iPhone videos (HEVC) only play in Safari.
 
 **Flickr link maker**
 - Two boxes: the link (web address) and the text of the link. The output is always `🔗 <a href="ADDRESS" rel="noreferrer nofollow">TEXT</a>`, with a copy button and a preview of the link.

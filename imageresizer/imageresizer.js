@@ -15,6 +15,10 @@ const PRESETS = [
 ];
 const MAX_SIDE = 8000;
 const EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+/* Files accepted as input (the result is always JPG, PNG or WebP) */
+const IN_TYPE = /^image\/(jpeg|png|webp|gif|bmp|avif|svg\+xml)$/, IN_EXT = /\.(jpe?g|png|webp|gif|bmp|avif|svg)$/i;
+const isSvg = f => f.type === "image/svg+xml" || /\.svg$/i.test(f.name);
+const isGif = f => f.type === "image/gif" || /\.gif$/i.test(f.name);
 
 let bmp = null, file = null, zoom = 1, cx = null, cy = null, timer = 0;
 const canvas = $("stage"), ctx = canvas.getContext("2d");
@@ -137,19 +141,35 @@ canvas.addEventListener("pointermove", e => {
 for (const ev of ["pointerup", "pointercancel"]) canvas.addEventListener(ev, () => { drag = null; canvas.classList.remove("drag"); });
 
 /* ---------- Loading the image ---------- */
+/* An SVG is a drawing, not a photo: it is drawn once, large enough to stay sharp (at least 1600 px on its long side). */
+async function decode(f) {
+  if (!isSvg(f)) return createImageBitmap(f);
+  const url = URL.createObjectURL(f), img = new Image();
+  try {
+    img.src = url; await img.decode();
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (!w || !h) throw new Error("svgsize");
+    const k = Math.min(MAX_SIDE / Math.max(w, h), Math.max(1, 1600 / Math.max(w, h)));
+    const c = Object.assign(document.createElement("canvas"), { width: Math.max(1, Math.round(w * k)), height: Math.max(1, Math.round(h * k)) });
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return await createImageBitmap(c);
+  } finally { URL.revokeObjectURL(url); }
+}
 async function loadImage(f) {
   if (!f) return;
   setStatus("");
   try {
-    if (!/^image\/(jpeg|png|webp)$/.test(f.type) && !/\.(jpe?g|png|webp)$/i.test(f.name)) throw new Error("type");
-    const b = await createImageBitmap(f);
+    if (!IN_TYPE.test(f.type) && !IN_EXT.test(f.name)) throw new Error("type");
+    const b = await decode(f);
     bmp = b; file = f; zoom = 1; cx = cy = null; $("zoom").value = 100;
-    $("fmt").value = f.type === "image/png" ? "image/png" : f.type === "image/webp" ? "image/webp" : "image/jpeg";
+    $("fmt").value = f.type === "image/png" || isSvg(f) || isGif(f) ? "image/png" : f.type === "image/webp" ? "image/webp" : "image/jpeg";
     $("fileMain").textContent = f.name; $("fileSub").textContent = "Click to change."; $("drop").classList.add("loaded");
-    $("srcInfo").textContent = "Original: " + b.width + " × " + b.height + " px, " + kb(f.size) + ".";
+    $("srcInfo").textContent = "Original: " + b.width + " × " + b.height + " px, " + kb(f.size) + "." +
+      (isGif(f) ? " Only the first image of this GIF is used: the result is not animated." : "") +
+      (isSvg(f) ? " This drawing is drawn at the size shown, so it stays sharp." : "");
     $("step1").classList.add("done");
   } catch (e) {
-    setStatus("That file couldn't be read as an image. Please choose a JPG, PNG or WebP file.", "error");
+    setStatus(e.message === "svgsize" ? "This SVG file has no size, so it cannot be used. Export it again from your drawing program with a width and a height." : "That file couldn't be read as an image. Please choose a JPG, PNG, WebP, GIF, BMP, AVIF or SVG file.", "error");
   }
   render();
 }

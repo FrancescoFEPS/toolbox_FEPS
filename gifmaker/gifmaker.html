@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video to GIF</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.fields{display:grid;gap:12px}
+.fields label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+.fields input[type=number],.fields select{font:inherit;font-weight:400;padding:10px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;color:var(--ink);min-width:0;width:100%}
+.fields input:focus-visible,.fields select:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:0;font-weight:400}
+.check input{margin-top:5px;accent-color:var(--red)}
+.check small{display:block;color:var(--muted)}
+button.alt{font:inherit;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:var(--r);padding:9px 16px;cursor:pointer}
+button.alt:hover:not(:disabled){background:var(--tint);border-color:var(--red)}button.alt:disabled{color:#8f98a6;border-color:#b9bfc9;cursor:not-allowed}
+progress{width:100%;height:14px;accent-color:var(--red)}
+#vid,#out{width:100%;height:auto;display:block;background:#e9ecf0;border:1px solid var(--line);border-radius:var(--r)}
+.empty{aspect-ratio:16/9;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+.stats{margin:12px 0 0;font-size:.95rem}
+.warn{margin:8px 0 0;font-size:.92rem;color:#8a4b00}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>Video to GIF</h1>
+    <p class="lede">Turn a short part of a video into an animated GIF.</p>
+    <p class="how">How it works: you choose a video, say which part to keep and how big the GIF should be, and download it. A short, small GIF stays light: the longer and bigger it is, the heavier the file.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Choose your video</h2>
+        <p>An MP4, MOV or WebM file.</p>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="video/*,.mp4,.mov,.m4v,.webm">
+          <span class="main-line" id="fileMain">Choose a video</span>
+          <span class="sub-line" id="fileSub">or drop it here</span>
+        </label>
+        <p class="hint" id="srcInfo"></p>
+        <p id="status" role="status" aria-live="polite"></p>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Choose the part and the size</h2>
+        <div class="fields">
+          <div class="row">
+            <label>Start (seconds)<input type="number" id="start" min="0" step="0.1" value="0"></label>
+            <label>Length (seconds)<input type="number" id="len" min="0.5" max="15" step="0.5" value="3"></label>
+          </div>
+          <div><button type="button" class="alt" id="here" disabled>Start from where the video is now</button></div>
+          <p class="hint" style="margin:0">Play the video on the right, stop it where you want the GIF to begin, then click this button.</p>
+          <div class="row">
+            <label>Width (px)<input type="number" id="w" min="100" max="800" step="10" value="480"></label>
+            <label>Images per second<select id="fps"><option value="5">5 (light, jerky)</option><option value="8">8</option><option value="10" selected>10 (good balance)</option><option value="15">15 (smooth)</option><option value="20">20 (very smooth, heavy)</option></select></label>
+          </div>
+          <label class="check"><input type="checkbox" id="loop" checked><span>Play again and again<small>If you untick it, the GIF plays once and stops.</small></span></label>
+          <label class="check"><input type="checkbox" id="dither"><span>Smoother colours<small>Better for gradients and skies, but the file is heavier.</small></span></label>
+        </div>
+        <p class="hint" id="estimate"></p>
+      </div></section>
+
+      <section class="step" id="step3"><div class="num" aria-hidden="true"><span>3</span></div><div>
+        <h2>Create and download</h2>
+        <button type="button" class="go" id="go" disabled>Create the GIF</button>
+        <p><progress id="bar" max="100" value="0" hidden></progress></p>
+        <p id="status2" role="status" aria-live="polite"></p>
+      </div></section>
+    </div>
+
+    <aside class="preview" aria-label="Preview">
+      <div id="empty" class="empty">Your video will appear here once you choose it.</div>
+      <video id="vid" controls muted playsinline hidden></video>
+      <div id="resultBox" hidden>
+        <h2 style="margin-top:20px">Your GIF</h2>
+        <img id="out" alt="The GIF you just made">
+        <p class="stats" id="stats"></p>
+      </div>
+      <p class="warn" id="warn" hidden></p>
+    </aside>
+  </main>
+
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Is my video uploaded anywhere?</summary><div><p>No. Everything happens inside your browser, on your computer.</p></div></details>
+    <details><summary>The GIF file is too heavy</summary><div><p>Make it shorter, narrower (for example 400 px), or use fewer images per second, and leave “Smoother colours” unticked. A GIF of 3 seconds at 480 px and 10 images per second is usually a few megabytes at most.</p></div></details>
+    <details><summary>The page says my video cannot be read</summary><div><p>Your browser cannot open that kind of video. MP4 (H.264) and WebM work almost everywhere. Videos from an iPhone (HEVC) only work in Safari: in another browser, export or convert the video to MP4 first.</p></div></details>
+    <details><summary>Why are the colours a bit different from the video?</summary><div><p>A GIF can only show 256 colours. The page chooses the best 256 for your clip. Ticking “Smoother colours” hides the steps in gradients.</p></div></details>
+    <details><summary>Does the GIF have sound?</summary><div><p>No, a GIF never has sound.</p></div></details>
+    <details><summary>Can I use the GIF in a Sarbacane newsletter?</summary><div><p>Yes, as an image. Keep the file as light as you can: many email programs load heavy GIFs slowly, and some show only the first image.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: your video never leaves your computer.</footer>
+</div>
+<script src="../assets/gif.js"></script>
+<script src="gifmaker.js"></script>
+</body>
+</html>
