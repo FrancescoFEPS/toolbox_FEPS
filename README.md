@@ -30,6 +30,7 @@ assets/
   style.css                shared look (all pages)
   jszip.min.js             JSZip 3.10.1, one shared copy
   table.js                 shared reader for .xlsx / .csv files (needs JSZip)
+  heic2any.min.js          HEIC to PNG converter, loaded on demand by the Image resizer
   gif.js                   shared animated GIF encoder (no library), used by the Video to GIF tool
   people.js                shared reader for people (name, last name, organisation) from a table (needs table.js)
   pdf-lib.min.js           pdf-lib 1.17.1 (MIT), used by the PDF tool
@@ -77,7 +78,7 @@ Rules of the structure:
 - The template must keep: a first table whose first row is the header and second row is the blank row to copy, the three placeholders in header 2, and the hand-typed page total in footer 2.
 
 **Image resizer**
-- Input: JPG, PNG, WebP, GIF, BMP, AVIF or SVG (AVIF only where the browser can read it). A GIF gives its first image only, so the result is not animated. An SVG is drawn once at least 1600 px on its long side, so it stays sharp. HEIC is not supported yet (it would need a library in `assets/`).
+- Input: JPG, PNG, WebP, GIF, BMP, AVIF or SVG (AVIF only where the browser can read it). A GIF gives its first image only, so the result is not animated. An SVG is drawn once at least 1600 px on its long side, so it stays sharp. HEIC (iPhone photos) is converted to PNG first by `assets/heic2any.min.js`, which is loaded only when a HEIC file is chosen (a 1.3 MB file, so it is not in every page).
 - Four modes: crop to an exact format (drag and zoom to choose what is kept), only change the size (whole image, never enlarged, width and/or height as maximums), exact format with a background added (colour or transparent), and **keep the original size and change only the file type** (the width and height fields are hidden; the image is re-saved as JPG, PNG or WebP at its own size).
 - Output as JPG, PNG or WebP, with a quality setting. The weight is shown before and after. When a transparent PNG is saved as JPG, the transparent parts become white.
 - Ready-made formats are listed in `PRESETS` at the top of `imageresizer.js`: add or edit lines there. Sizes are limited to 8000 px on a side (this limit does not apply to the "keep the original size" mode).
@@ -144,4 +145,5 @@ Do not open the pages by double-clicking the files: the browser then blocks the 
 ## Good to know
 
 - The tools handle personal data (registrations, names): it stays in the browser tab and is gone when the page is closed. The Word and PowerPoint files created are saved on the user's computer, so they should be kept safely and deleted when no longer needed.
+- `assets/heic2any.min.js` (heic2any) comes from the npm package of the same name; check its licence notice before sharing the repository outside the team.
 - JSZip 3.10.1 is MIT / GPLv3 dual licensed; its licence notice is at the top of `assets/jszip.min.js`.

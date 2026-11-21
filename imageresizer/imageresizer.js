@@ -16,8 +16,9 @@ const PRESETS = [
 const MAX_SIDE = 8000;
 const EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 /* Files accepted as input (the result is always JPG, PNG or WebP) */
-const IN_TYPE = /^image\/(jpeg|png|webp|gif|bmp|avif|svg\+xml)$/, IN_EXT = /\.(jpe?g|png|webp|gif|bmp|avif|svg)$/i;
+const IN_TYPE = /^image\/(jpeg|png|webp|gif|bmp|avif|svg\+xml|heic|heif)$/, IN_EXT = /\.(jpe?g|png|webp|gif|bmp|avif|svg|heic|heif)$/i;
 const isSvg = f => f.type === "image/svg+xml" || /\.svg$/i.test(f.name);
+const isHeic = f => /^image\/hei[cf]/.test(f.type) || /\.hei[cf]$/i.test(f.name);
 const isGif = f => f.type === "image/gif" || /\.gif$/i.test(f.name);
 
 let bmp = null, file = null, zoom = 1, cx = null, cy = null, timer = 0;
@@ -142,7 +143,24 @@ for (const ev of ["pointerup", "pointercancel"]) canvas.addEventListener(ev, () 
 
 /* ---------- Loading the image ---------- */
 /* An SVG is a drawing, not a photo: it is drawn once, large enough to stay sharp (at least 1600 px on its long side). */
+/* An iPhone photo (HEIC) is first converted to PNG by the small library assets/heic2any.min.js, loaded only when needed. */
+let heicLoad = null;
+function loadHeicLib() {
+  if (window.heic2any) return Promise.resolve();
+  return heicLoad || (heicLoad = new Promise((ok, no) => {
+    const s = Object.assign(document.createElement("script"), { src: "../assets/heic2any.min.js" });
+    s.onload = ok; s.onerror = () => { heicLoad = null; no(new Error("heiclib")); };
+    document.head.appendChild(s);
+  }));
+}
 async function decode(f) {
+  if (isHeic(f)) {
+    setStatus("Converting the iPhone photo… this can take a few seconds.");
+    await loadHeicLib();
+    let out = await heic2any({ blob: f, toType: "image/png" });
+    if (Array.isArray(out)) out = out[0];
+    return createImageBitmap(out);
+  }
   if (!isSvg(f)) return createImageBitmap(f);
   const url = URL.createObjectURL(f), img = new Image();
   try {
@@ -160,16 +178,20 @@ async function loadImage(f) {
   setStatus("");
   try {
     if (!IN_TYPE.test(f.type) && !IN_EXT.test(f.name)) throw new Error("type");
-    const b = await decode(f);
+    const b = await decode(f); setStatus("");
     bmp = b; file = f; zoom = 1; cx = cy = null; $("zoom").value = 100;
     $("fmt").value = f.type === "image/png" || isSvg(f) || isGif(f) ? "image/png" : f.type === "image/webp" ? "image/webp" : "image/jpeg";
     $("fileMain").textContent = f.name; $("fileSub").textContent = "Click to change."; $("drop").classList.add("loaded");
     $("srcInfo").textContent = "Original: " + b.width + " × " + b.height + " px, " + kb(f.size) + "." +
+      (isHeic(f) ? " Converted from HEIC." : "") +
       (isGif(f) ? " Only the first image of this GIF is used: the result is not animated." : "") +
       (isSvg(f) ? " This drawing is drawn at the size shown, so it stays sharp." : "");
     $("step1").classList.add("done");
   } catch (e) {
-    setStatus(e.message === "svgsize" ? "This SVG file has no size, so it cannot be used. Export it again from your drawing program with a width and a height." : "That file couldn't be read as an image. Please choose a JPG, PNG, WebP, GIF, BMP, AVIF or SVG file.", "error");
+    setStatus(e.message === "svgsize" ? "This SVG file has no size, so it cannot be used. Export it again from your drawing program with a width and a height."
+      : e.message === "heiclib" ? "The converter for iPhone photos could not be loaded. Please open this page from the website, not from a downloaded file."
+      : isHeic(f) ? "This iPhone photo (HEIC) could not be converted. Export it as a JPG first, then try again."
+      : "That file couldn't be read as an image. Please choose a JPG, PNG, WebP, GIF, BMP, AVIF, SVG or HEIC file.", "error");
   }
   render();
 }

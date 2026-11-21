@@ -9,7 +9,8 @@
 
 ### Changed
 - **Image resizer** (`imageresizer/imageresizer.html`, `imageresizer/imageresizer.js`): the input now also accepts GIF (first image only, not animated), BMP, AVIF (where the browser can read it) and SVG (drawn at least 1600 px on its long side). The result is still JPG, PNG or WebP. Messages and questions updated.
-- **`README.md`**: added Video to GIF, `gif.js` and the new input formats.
+- **Image resizer**: iPhone photos (HEIC/HEIF) are accepted too. They are converted to PNG in the browser by `assets/heic2any.min.js`, loaded only when needed.
+- **`README.md`**: added Video to GIF, `gif.js`, `heic2any.min.js` and the new input formats.
 
 ## [1.0.1] - 2026-11-20
 
