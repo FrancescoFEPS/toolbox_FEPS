@@ -8,6 +8,9 @@
   - The address and the title are escaped, so quotes or `&` cannot break the code.
 - **Home page** (`index.html`): new "Flickr link maker" card, in the Images group.
 
+### Changed
+- **`README.md`**: added the Flickr link maker (table, structure, how it works) and brought the Nameplates and Registration sections in line with version 1.0.0 (no-logo option, two-row logos, up to 10 extra logos, `people.js`, no status filtering, bold names, wider signature column).
+
 ## [1.0.0] - 2026-11-20
 
 ### Added

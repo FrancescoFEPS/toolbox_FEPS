@@ -15,6 +15,7 @@ On the home page the tools are grouped by type, with a title per group.
 | Newsletter and website | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
 | Images | Image resizer | `imageresizer/` | Crops, resizes, compresses or changes the format of an image for the website, the newsletter or social media. |
 | Images | Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
+| Images | Flickr link maker | `flickr/` | Turns a link and its title into the code of a 🔗 link to paste in a Flickr description. |
 | Lists and documents | List cleaner | `cleaner/` | Cleans an Excel/CSV list (spaces, capitals, empty rows, duplicates, wrong emails, comparison with another list). |
 | Lists and documents | PDF merge and split | `pdf/` | Merges PDFs, takes pages out of a PDF, or splits a PDF into several files. |
 
@@ -28,6 +29,7 @@ assets/
   style.css                shared look (all pages)
   jszip.min.js             JSZip 3.10.1, one shared copy
   table.js                 shared reader for .xlsx / .csv files (needs JSZip)
+  people.js                shared reader for people (name, last name, organisation) from a table (needs table.js)
   pdf-lib.min.js           pdf-lib 1.17.1 (MIT), used by the PDF tool
 favicon/favicon.png
 nameplates/    nameplates.html + nameplates.js      (+ Nameplates_FEPS.pptx)
@@ -39,12 +41,13 @@ calendar/      calendar.html + calendar.js
 cleaner/       cleaner.html + cleaner.js
 pdf/           pdf.html + pdf.js
 blur/          blur.html + blur.js
+flickr/        flickr.html + flickr.js
 ```
 
 Rules of the structure:
 
 - One folder per tool: a light HTML page and one JS file. No library is pasted inside a page.
-- Script order on a page: `../assets/jszip.min.js`, then `../assets/table.js` (only if the tool reads Excel/CSV), then the tool's own JS.
+- Script order on a page: `../assets/jszip.min.js`, then `../assets/table.js` (only if the tool reads Excel/CSV), then `../assets/people.js` (only if the tool reads people), then the tool's own JS.
 - Shared look = `assets/style.css`. Only what is specific to one page goes in a small `<style>` in that page.
 - No CDN and no external request: the tools work without internet once the page is loaded.
 - `Nameplates_FEPS.pptx`, `Registration_template.docx` and `logo_FEPS.png` are loaded by the page with `fetch`, so they must stay in the same folder as their page.
@@ -54,19 +57,20 @@ Rules of the structure:
 **Nameplates generator**
 - The first slide of `Nameplates_FEPS.pptx` is the model: it is copied once per name and the other slides are removed. A user can choose their own .pptx instead (first slide used, same rules).
 - The name replaces the text in every text box of the slide (upright and upside down), so no other text should be in a text box on that slide. Every picture on the slide is treated as a logo.
-- Up to 5 extra logos (PNG or JPG) are added after the existing logos, in the order chosen, on both the upright and the upside-down copy.
-- Names: typed or pasted one per line, or loaded from an Excel/CSV file (only the columns Name and Last name or Surname are used). Leading bullets or numbers are removed, and anything after a comma, semicolon, tab or " - " (title, organisation) is ignored. Capitals are kept as typed.
+- Up to 10 extra logos (PNG or JPG) are added after the existing logos, in the order chosen, on both the upright and the upside-down copy. With more than 5 logos in total (FEPS included), they go on two rows.
+- "No logo at all (not even FEPS)" removes every picture from the nameplates.
+- Names: typed or pasted one per line, or loaded from an Excel/CSV file (columns Name and Last name or Surname, or one column holding the full name). Leading bullets or numbers are removed, and anything after a comma, semicolon, tab or " - " (title, organisation) is ignored. Capitals are kept as typed.
 
 **Sarbacane code cleaner**
 - Four replacements, always the same and in the same order: `<body>` becomes a `<div>` with a transparent background; the main table background goes from #f6f1f1 to white; the closing `</body></html>` becomes `</div></html>`; a `.singlePostContent` style line (background #f6f1f1) is added at the top of the styles.
 - The page shows which of the 4 were applied and which were not found. Text and images are never touched.
 
 **Registration list**
-- Input: the Excel (.xlsx) or CSV exported from the website. First row = column titles, first sheet.
-- Required columns: Name, Last name (or Surname), Organisation. Optional: STATUS and Event (the event name pre-fills the form).
-- Who is kept: STATUS "Allow" or empty. If there is no STATUS column, everybody is kept. Any other status is left out and listed under "Who was left out?".
+- Input: the Excel (.xlsx) or CSV exported from the website. First row = column titles, first sheet. Names can also be pasted by hand, one person per line ("Ania Skrzypek, FEPS") or as cells copied from Excel.
+- Required columns: Name, Last name (or Surname), Organisation. If first and last name are in one column, the page splits them (capitals = last name, otherwise the last word). Organisation is optional and may also hold the job title; if there is none the cell stays blank. Optional: Event (the event name pre-fills the form).
+- Who is kept: everybody in the file. Each person can be removed with the "Remove" button in the list.
 - Order: last name, then first name, A to Z, accents ignored.
-- Output `Registration_List.docx`, built from `Registration_template.docx`: the people table, followed by 2 blank pages of 12 lines for guests who did not register online. The event name, date and location replace the placeholders `[EVENT NAME]`, `[DATE]` and `[LOCATION]` in the header. Extra logos (up to 5) go next to the existing logo in the header. The total number of pages in the footer is an automatic field.
+- Output `Registration_List.docx`, built from `Registration_template.docx`: the people table (first and last names in bold, signature column wider), followed by 2 blank pages of 12 lines for guests who did not register online. The event name, date and location replace the placeholders `[EVENT NAME]`, `[DATE]` and `[LOCATION]` in the header. Extra logos (up to 5) go next to the existing logo in the header, at 65% of its height. The total number of pages in the footer is an automatic field. "organizers" is written "organisers".
 - The template must keep: a first table whose first row is the header and second row is the blank row to copy, the three placeholders in header 2, and the hand-typed page total in footer 2.
 
 **Image resizer**
@@ -104,6 +108,11 @@ Rules of the structure:
 - Pixelate and blur are drawn by shrinking and enlarging the zone (no `ctx.filter`, so it also works in Safari). Strength is one setting for all pixelate/blur zones.
 - Not done yet: PDFs (idea: render each page to an image with pdf.js, hide, rebuild).
 
+**Flickr link maker**
+- Two boxes: the link (web address) and the text of the link. The output is always `🔗 <a href="ADDRESS" rel="noreferrer nofollow">TEXT</a>`, with a copy button and a preview of the link.
+- A link typed without `https://` gets it added; the rest of the address is kept exactly as typed (even a double slash at the end). The address and the text are escaped, so quotes or `&` cannot break the code.
+- One link at a time: for several links, make the code once per link.
+
 ## Running it on your computer
 
 Open the folder in a terminal and start a small local server, then open the address it shows:
@@ -118,10 +127,10 @@ Do not open the pages by double-clicking the files: the browser then blocks the 
 ## Adding a tool
 
 1. Create a folder `<tool>/` with `<tool>.html` and `<tool>.js`.
-2. In the page, link `../assets/style.css`; add `../assets/jszip.min.js` and `../assets/table.js` only if needed.
+2. In the page, link `../assets/style.css`; add `../assets/jszip.min.js`, `../assets/table.js` and `../assets/people.js` only if needed.
 3. Follow the layout of the other tools: back link, title, one-sentence explanation, numbered steps, questions, footer saying the data stays in the browser.
 4. In `index.html`, copy a whole `<a class="tool">` block into the right group (Events, Newsletter and website, Images, Lists and documents) and change the link, title and sentence. If no group fits, copy a whole `<section class="group">` to start a new one.
-5. Add the tool to the table above in this README.
+5. Add the tool to the table above in this README, and a line in `CHANGELOG.md`.
 
 ## Good to know
 
