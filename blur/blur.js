@@ -22,10 +22,13 @@ function shrink(z, f, smooth) {
   }
   return c;
 }
+/* The size of the blocks depends on the rectangle, not on the image: the short side of the rectangle is
+   cut into only a few blocks (strength 1 to 5), so a small name on a big screenshot is as unreadable as a big face. */
+const BLOCKS_ACROSS = { pixel: [6, 5, 4, 3, 2], blur: [8, 6, 5, 4, 3] };
 function paintZone(z) {
-  const level = +$("str").value, base = Math.max(bmp.width, bmp.height) / 120;
   if (z.kind === "black") { wctx.fillStyle = "#000"; wctx.fillRect(z.x, z.y, z.w, z.h); return; }
-  const f = Math.max(4, Math.round(base * level * (z.kind === "pixel" ? 1.6 : 1.1)));
+  const level = +$("str").value, across = BLOCKS_ACROSS[z.kind][level - 1];
+  const f = Math.max(3, Math.round(Math.min(z.w, z.h) / across));
   const c = shrink(z, f, z.kind === "blur");
   wctx.imageSmoothingEnabled = z.kind === "blur"; wctx.imageSmoothingQuality = "high";
   wctx.drawImage(c, 0, 0, c.width, c.height, z.x, z.y, z.w, z.h);

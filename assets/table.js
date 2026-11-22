@@ -13,9 +13,12 @@ async function readXlsx(buf) {
   const sheet = await txt(target.startsWith("/") ? target.slice(1) : "xl/" + target);
   const sst = [...(await txt("xl/sharedStrings.xml")).matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => dec([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(t => t[1]).join("")));
   const rows = [];
-  for (const r of sheet.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+  // A row can be self-closing (<row r="3"/>): it is an empty row and must not swallow the next one.
+  for (const r of sheet.matchAll(/<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g)) {
+    const rn = +((/\br="(\d+)"/.exec(r[1]) || [])[1] || 0);
+    if (rn && rn - 1 > rows.length && rn - 1 - rows.length < 100000) while (rows.length < rn - 1) rows.push([]);   // skipped rows stay empty
     const row = [];
-    for (const c of r[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+    for (const c of (r[2] || "").matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
       const ref = /r="([A-Z]+)\d+"/.exec(c[1]); if (!ref) continue;
       const col = ref[1].split("").reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
       const t = (/\bt="([^"]+)"/.exec(c[1]) || [])[1], body = c[2] || "";

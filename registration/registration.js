@@ -3,33 +3,38 @@ const $ = id => document.getElementById(id);
 const els = { logos: $("logos"), logoList: $("logoList") };
 const NOFOLDERS = { createFolders: false };
 const MAX_EXTRA = 5, BLANK_ROWS = 12, SMALL = 0.65;   // extra logos are 65% of the height of the FEPS logo
-const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-let extras = [], people = [], tpl = { feps: null, plain: null };   // feps = with logo, plain = no logo at all
-const noLogo = () => $("noLogo").checked;
+/* Escapes text for XML and removes invisible control characters (Word would say the file needs repair). */
+const esc = s => s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+let extras = [], people = [], templateBuf = null, warnings = [];
 
 function setStatus(t, k) { $("status").textContent = t; $("status").className = k || ""; }
 function refreshButton() {
-  $("go").disabled = !(tpl[noLogo() ? "plain" : "feps"] && people.length);
+  $("go").disabled = !(templateBuf && people.length);
   $("step1").classList.toggle("done", people.length > 0);
   $("step2").classList.toggle("done", ["evName", "evDate", "evPlace"].every(i => $(i).value.trim()));
-  $("step3").classList.toggle("done", extras.length > 0 || noLogo());
+  $("step3").classList.toggle("done", extras.length > 0);
   $("step4").classList.toggle("ready", !$("go").disabled);
 }
 
 /* ---------- The list of people (file + pasted), sorted by last name, with a Remove button ---------- */
 const cmp = (a, b) => a.localeCompare(b, "en", { sensitivity: "base" });
+const personKey = p => (p.first + " " + p.last).replace(/\s+/g, " ").trim().toLowerCase();
 function render() {
   people.sort((a, b) => cmp(a.last || a.first, b.last || b.first) || cmp(a.first, b.first));
+  const seen = new Map();
+  for (const p of people) seen.set(personKey(p), (seen.get(personKey(p)) || 0) + 1);
+  let dups = 0;
   $("list").replaceChildren(...people.map(p => {
-    const li = document.createElement("li");
+    const li = document.createElement("li"), twice = seen.get(personKey(p)) > 1;
     const btn = Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "Remove" });
     btn.style.cssText = "float:right;margin:0";
     btn.setAttribute("aria-label", "Remove " + p.first + " " + p.last);
     btn.addEventListener("click", () => { people = people.filter(x => x !== p); render(); });
-    li.append(btn, document.createTextNode((p.first + " " + p.last).trim() + (p.org ? " (" + p.org + ")" : "")));
+    if (twice) dups++;
+    li.append(btn, document.createTextNode((p.first + " " + p.last).trim() + (p.org ? " (" + p.org + ")" : "") + (twice ? " – listed more than once?" : "")));
     return li;
   }));
-  $("count").textContent = people.length ? people.length + (people.length === 1 ? " person" : " people") : "";
+  $("count").textContent = people.length ? people.length + (people.length === 1 ? " person" : " people") + (dups ? ", " + dups + " listed more than once" : "") : "";
   refreshButton();
 }
 async function loadFile(file) {
@@ -102,8 +107,8 @@ els.logos.addEventListener("change", async () => {
 /* ---------- Building the Word document ---------- */
 const strip = x => x.replace(/ w14:(?:paraId|textId)="[^"]*"/g, "").replace('w:hRule="exact"', 'w:hRule="atLeast"');
 const PB = '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="2"/></w:rPr><w:br w:type="page"/></w:r></w:p>';
-/* "organizer(s)" -> "organiser(s)" (also when Word has split the word over several pieces) */
-const britishise = x => x.replace(/(organi)((?:<[^>]*>)*)z(er)/gi, "$1$2s$3");
+/* "organizers" -> "organisers" (also when Word has split the word over several pieces) */
+const britishise = x => x.replace(/(organi)((?:<[^>]*>)*)z(ers)/gi, "$1$2s$3");
 /* Adds bold to a run-properties block (kept in the order Word expects) */
 function bold(rpr) {
   rpr = rpr.replace(/<w:b w:val="(?:0|false)"\/>/, "");
@@ -114,26 +119,21 @@ function bold(rpr) {
   return rpr.replace("<w:rPr>", "<w:rPr><w:b/>");
 }
 
-/* d = { people, extras, ev: { name, date, place } }. `buf` is the template with the FEPS logo, or the one without any logo
-   (then `extras` must be empty). */
-async function buildDoc(buf, d) {
-  const zip = await JSZip.loadAsync(buf);
+async function buildDoc() {
+  warnings = [];
+  const zip = await JSZip.loadAsync(templateBuf);
   const read = p => zip.file(p).async("string");
-  const names = Object.keys(zip.files);
   let doc = britishise(await read("word/document.xml"));
   const tbl = /<w:tbl>[\s\S]*?<\/w:tbl>/.exec(doc)[0];
   const rows = tbl.match(/<w:tr\b[\s\S]*?<\/w:tr>/g);
   let open = tbl.slice(0, tbl.indexOf(rows[0]));
 
-  // Wider "Signature" column: about 1.6 times wider, the space is taken from the Organisation column and the last one
+  // Wider signature column (the last one): it grows to 160% of its width, at most 45% of the table; the others shrink.
   const grid = [...open.matchAll(/<w:gridCol w:w="(\d+)"/g)].map(m => +m[1]);
-  const heads = (rows[0].match(/<w:tc>[\s\S]*?<\/w:tc>/g) || []).map(c => (c.match(/<w:t[^>]*>[^<]*/g) || []).join(""));
-  const si = heads.findIndex(t => /signature/i.test(t));
   let newW = null;
-  if (si >= 2 && heads.length === grid.length) {
-    const sig = Math.round(grid[si] * 1.6), delta = sig - grid[si];
-    const donors = grid.map((_, i) => i).filter(i => i >= 2 && i !== si), sum = donors.reduce((a, i) => a + grid[i], 0);
-    newW = grid.map((w, i) => i === si ? sig : donors.includes(i) ? Math.round(w - delta * w / sum) : w);
+  if (grid.length >= 3 && (rows[0].match(/<w:tcW w:w="\d+"/g) || []).length === grid.length) {
+    const tot = grid.reduce((a, b) => a + b, 0), lastW = grid[grid.length - 1], sig = Math.min(Math.round(tot * 0.45), Math.round(lastW * 1.6)), k = (tot - sig) / (tot - lastW);
+    if (sig > lastW) newW = grid.map((w, i) => i === grid.length - 1 ? sig : Math.round(w * k));
   }
   const reW = x => { if (!newW) return x; let i = 0; return x.replace(/<w:tcW w:w="\d+"/g, m => i < newW.length ? '<w:tcW w:w="' + newW[i++] + '"' : m); };
   if (newW) { let j = 0; open = open.replace(/<w:gridCol w:w="\d+"/g, m => '<w:gridCol w:w="' + newW[j++] + '"'); }
@@ -147,81 +147,71 @@ async function buildDoc(buf, d) {
     return p.replace("</w:p>", () => '<w:r>' + rpr + '<w:t xml:space="preserve">' + esc(v) + "</w:t></w:r></w:p>");
   }); };
   const blankTbl = open + head + blank.repeat(BLANK_ROWS) + "</w:tbl>";
-  const table = open + head + d.people.map(p => fill([p.first, p.last, p.org])).join("") + "</w:tbl>" + PB + blankTbl + PB + blankTbl;
+  const table = open + head + people.map(p => fill([p.first, p.last, p.org])).join("") + "</w:tbl>" + PB + blankTbl + PB + blankTbl;
   zip.file("word/document.xml", doc.replace(tbl, () => table), NOFOLDERS);
 
-  // Header (the file that holds the placeholders): event name, date, location (+ extra logos next to the FEPS logo)
-  let hdPath = null, hd = "";
-  for (const n of names.filter(n => /^word\/header\d+\.xml$/.test(n))) { const x = await read(n); if (x.includes("[EVENT NAME]")) { hdPath = n; hd = britishise(x); } }
-  if (!hdPath) throw new Error("the Word template has no [EVENT NAME] placeholder in its header");
-  const put = (from, to) => { hd = hd.replace(from, () => to); };
-  put("[EVENT NAME]", esc(d.ev.name));
-  put("[DATE]", esc(d.ev.date));
-  put("<w:t>[</w:t>", "<w:t></w:t>"); put("<w:t>LOCATION</w:t>", "<w:t>" + esc(d.ev.place) + "</w:t>"); put("<w:t>]</w:t>", "<w:t></w:t>");
-  if (d.extras.length && /<w:drawing>/.test(hd)) {
-    let types = await read("[Content_Types].xml");
-    const relsPath = hdPath.replace("word/", "word/_rels/") + ".rels", extras = d.extras;
+  // Header: event name, date, location (+ extra logos next to the FEPS logo)
+  let hd = britishise(await read("word/header2.xml"));
+  const put = (from, to, label) => {
+    if (!hd.includes(from)) { warnings.push(label); return; }
+    hd = hd.replace(from, () => to);
+  };
+  put("[EVENT NAME]", esc($("evName").value.trim()), "[EVENT NAME]");
+  put("[DATE]", esc($("evDate").value.trim()), "[DATE]");
+  put("<w:t>[</w:t>", "<w:t></w:t>", "[LOCATION]"); put("<w:t>LOCATION</w:t>", "<w:t>" + esc($("evPlace").value.trim()) + "</w:t>", "[LOCATION]"); put("<w:t>]</w:t>", "<w:t></w:t>", "[LOCATION]");
+  let types = await read("[Content_Types].xml");
+  if (extras.length) {
     const base = /<w:drawing>[\s\S]*?<\/w:drawing>/.exec(hd)[0];
     const H0 = 544195, HS = H0 * SMALL, X0 = 1996440 + 250000, gap = 150000, avail = 9072 * 635 - X0;
     const widths = extras.map(e => HS * e.w / e.h);
     const k = Math.min(1, avail / (widths.reduce((a, b) => a + b, 0) + gap * (extras.length - 1)));
-    let x = X0, runs = "", rels = await read(relsPath), relXml = "";
+    let x = X0, runs = "", rels = await read("word/_rels/header2.xml.rels"), relXml = "";
     extras.forEach((e, i) => {
       const w = Math.round(widths[i] * k), h = Math.round(HS * k), y = -102447 + Math.round((H0 - h) / 2);
       const rid = "rIdLogo" + (i + 1), file = "logo_extra_" + (i + 1) + "." + e.ext, nm = "Logo " + (i + 2);
       zip.file("word/media/" + file, e.bytes, NOFOLDERS);
       relXml += '<Relationship Id="' + rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + file + '"/>';
-      const dr = base.replace("<wp:posOffset>0</wp:posOffset>", "<wp:posOffset>" + x + "</wp:posOffset>").replace("<wp:posOffset>-102447</wp:posOffset>", "<wp:posOffset>" + y + "</wp:posOffset>")
+      const d = base.replace("<wp:posOffset>0</wp:posOffset>", "<wp:posOffset>" + x + "</wp:posOffset>").replace("<wp:posOffset>-102447</wp:posOffset>", "<wp:posOffset>" + y + "</wp:posOffset>")
         .replace(/<wp:extent cx="\d+" cy="\d+"\/>/, '<wp:extent cx="' + w + '" cy="' + h + '"/>').replace(/<a:ext cx="\d+" cy="\d+"\/>/, '<a:ext cx="' + w + '" cy="' + h + '"/>')
         .replace('r:embed="rId1"', 'r:embed="' + rid + '"').replace(/ wp14:(?:anchorId|editId)="[^"]*"/g, "")
         .replace(/<wp:docPr [^>]*\/>/, '<wp:docPr id="' + (9000 + i) + '" name="' + nm + '"/>').replace(/<pic:cNvPr [^>]*\/>/, '<pic:cNvPr id="' + (9000 + i) + '" name="' + nm + '"/>');
-      runs += '<w:r><w:rPr><w:noProof/></w:rPr>' + dr + "</w:r>";
+      runs += '<w:r><w:rPr><w:noProof/></w:rPr>' + d + "</w:r>";
       x += w + gap;
     });
-    put("</w:drawing></w:r>", "</w:drawing></w:r>" + runs);
-    zip.file(relsPath, rels.replace("</Relationships>", relXml + "</Relationships>"), NOFOLDERS);
+    put("</w:drawing></w:r>", "</w:drawing></w:r>" + runs, "the logo in the header");
+    zip.file("word/_rels/header2.xml.rels", rels.replace("</Relationships>", relXml + "</Relationships>"), NOFOLDERS);
     for (const ext of new Set(extras.map(e => e.ext)))
       if (!new RegExp('Extension="' + ext + '"', "i").test(types)) types = types.replace(/(<Types\b[^>]*>)/, '$1<Default Extension="' + ext + '" ContentType="image/' + ext + '"/>');
     zip.file("[Content_Types].xml", types, NOFOLDERS);
   }
-  zip.file(hdPath, hd, NOFOLDERS);
+  zip.file("word/header2.xml", hd, NOFOLDERS);
 
-  // Footer (the file with the hand-typed page total "/4"): make the total automatic
-  const R = '<w:r><w:rPr><w:rStyle w:val="PageNumber"/></w:rPr>', tot = /<w:r\b[^>]*><w:rPr><w:rStyle w:val="PageNumber"\/><\/w:rPr><w:t>4<\/w:t><\/w:r>/;
-  for (const n of names.filter(n => /^word\/footer\d+\.xml$/.test(n))) {
-    let ft = britishise(await read(n));
-    if (tot.test(ft)) ft = ft.replace(tot, () => R + '<w:fldChar w:fldCharType="begin"/></w:r>' + R + '<w:instrText xml:space="preserve">NUMPAGES  </w:instrText></w:r>' + R + '<w:fldChar w:fldCharType="separate"/></w:r>' + R + "<w:t>4</w:t></w:r>" + R + '<w:fldChar w:fldCharType="end"/></w:r>');
-    zip.file(n, ft, NOFOLDERS);
-  }
+  // Footer: the total number of pages was typed in by hand ("/4"): make it automatic
+  let ft = britishise(await read("word/footer2.xml"));
+  const R = '<w:r><w:rPr><w:rStyle w:val="PageNumber"/></w:rPr>';
+  const ft0 = ft;
+  ft = ft.replace(/<w:r\b[^>]*><w:rPr><w:rStyle w:val="PageNumber"\/><\/w:rPr><w:t>4<\/w:t><\/w:r>/, () =>
+    R + '<w:fldChar w:fldCharType="begin"/></w:r>' + R + '<w:instrText xml:space="preserve">NUMPAGES  </w:instrText></w:r>' + R + '<w:fldChar w:fldCharType="separate"/></w:r>' + R + "<w:t>4</w:t></w:r>" + R + '<w:fldChar w:fldCharType="end"/></w:r>');
+  if (ft === ft0) warnings.push("the total number of pages in the footer");
+  zip.file("word/footer2.xml", ft, NOFOLDERS);
+
   return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", compression: "DEFLATE" });
 }
-/* ---- browser part (not needed by the tests) ---- */
-if (typeof document !== "undefined" && document.getElementById("go")) {
 $("go").addEventListener("click", async () => {
   $("go").disabled = true; setStatus("Creating the document…");
   try {
-    const plain = noLogo();
-    const blob = await buildDoc(tpl[plain ? "plain" : "feps"], { people, extras: plain ? [] : extras, ev: { name: $("evName").value.trim(), date: $("evDate").value.trim(), place: $("evPlace").value.trim() } });
-    const url = URL.createObjectURL(blob);
+    const blob = await buildDoc(), url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement("a"), { href: url, download: "Registration_List.docx" });
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 10000);
-    setStatus("Done: Registration_List.docx downloaded (" + people.length + (people.length === 1 ? " person)." : " people)."), "ok");
+    const done = "Done: Registration_List.docx downloaded (" + people.length + (people.length === 1 ? " person)." : " people).");
+    if (warnings.length) setStatus(done + " Warning: " + [...new Set(warnings)].join(", ") + " could not be found in the Word template, so check these parts in the document.", "error");
+    else setStatus(done, "ok");
     $("after").hidden = false;
   } catch (e) { setStatus("Something went wrong: " + e.message, "error"); }
   refreshButton();
 });
 
-/* "No logo at all": uses the template without any logo, so extra logos are switched off. */
-$("noLogo").addEventListener("change", () => {
-  const off = noLogo();
-  els.logos.disabled = off; $("logoBox").style.opacity = off ? ".5" : "";
-  $("noLogoNote").textContent = off ? "The document will have no logo at all, not even FEPS." : "";
-  refreshButton();
-});
-
-const getTpl = name => fetch(name).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); });
-Promise.all([getTpl("Registration_template_FEPS.docx"), getTpl("Registration_template.docx")])
-  .then(([a, b]) => { tpl.feps = a; tpl.plain = b; $("note").textContent = "Word templates loaded."; refreshButton(); })
-  .catch(() => { $("note").textContent = "The Word templates could not be loaded. Please open this page from the website, not from a downloaded file."; });
+fetch("Registration_template.docx").then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+  .then(b => { templateBuf = b; $("note").textContent = "Word template loaded."; refreshButton(); })
+  .catch(() => { $("note").textContent = "The Word template could not be loaded. Please open this page from the website, not from a downloaded file."; });
 render();
-}
