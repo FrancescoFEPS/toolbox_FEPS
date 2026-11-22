@@ -13,6 +13,8 @@ const FMT = {
 const EMAIL_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/;
 const key = s => s.replace(/\s+/g, " ").trim().toLowerCase();
 const colName = i => { let s = ""; for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; };
+/* A column holds dates when its title has the word "date", "time" or "timestamp" (not "Candidate" or "Update"). */
+const isDateTitle = h => /(^|[^a-z])(date|time|timestamp)s?($|[^a-z])/i.test(h);
 function setStatus(t, k) { $("status").textContent = t; $("status").className = k || ""; }
 
 /* Excel keeps dates as numbers (45123 = 2023-07-15): turn them back into dates. */
@@ -82,7 +84,7 @@ function process() {
     if (b - R.length) note((b - R.length) + (b - R.length === 1 ? " empty row was removed." : " empty rows were removed."));
   }
   H0.forEach((h, i) => {
-    if (!/date|time/.test(norm(h))) return;
+    if (!isDateTitle(h)) return;
     let n = 0;
     for (const r of R) { const v = r[i].trim(); if (/^\d+(\.\d+)?$/.test(v)) { const d = serialToDate(v); if (d) { r[i] = d; n++; } } }
     if (n) note("Dates in “" + h + "” were shown as numbers: " + n + " turned back into dates.");

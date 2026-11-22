@@ -12,7 +12,8 @@ function parseNames(text) {
 }
 
 /* ---------- PPTX helpers ---------- */
-const escapeXml = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+/* Escapes text for XML and removes invisible control characters (PowerPoint would say the file needs repair). */
+const escapeXml = s => s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 const escapeRegex = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const relsPathOf = p => p.replace(/([^/]+)$/, "_rels/$1.rels");
 const dirOf = p => p.slice(0, p.lastIndexOf("/"));
@@ -191,6 +192,8 @@ async function buildDeck(buffer, names, extras = [], noLogo = false) {
   pres = pres.replace("</p:sldIdLst>", newIds + "</p:sldIdLst>");
   presRels = presRels.replace("</Relationships>", newRels + "</Relationships>");
   types = types.replace("</Types>", newTypes + "</Types>");
+  // A template with PowerPoint "sections" lists its slides by id: those ids no longer exist, so PowerPoint would ask to repair the file.
+  pres = pres.replace(/<p:ext uri="\{521415D9-36F7-43E2-AB2F-B90AF26B5E84\}">[\s\S]*?<\/p:ext>/, "");
 
   zip.file("ppt/presentation.xml", pres, NOFOLDERS);
   zip.file("ppt/_rels/presentation.xml.rels", presRels, NOFOLDERS);
@@ -213,7 +216,7 @@ const els = {
 els.logos = $("logos"); els.logoList = $("logoList"); els.note = $("designNote");
 let extras = [];
 const MAX_EXTRA = 10;
-let templateBuffer = null, plainBuffer = null, customDesign = false;   // plainBuffer = built-in design without any logo
+let templateBuffer = null;
 let templateName = "";
 
 function setStatus(text, kind) {
@@ -252,7 +255,6 @@ async function loadTemplate(file, builtIn = false) {
                              await zip.file("ppt/_rels/presentation.xml.rels").async("string")).length;
     if (!count) throw new Error("no slides");
     templateBuffer = buffer;
-    customDesign = !builtIn;
     templateName = file.name;
     els.drop.classList.add("loaded");
     els.main.textContent = file.name;
@@ -280,7 +282,7 @@ els.go.addEventListener("click", async () => {
   els.go.disabled = true;
   setStatus("Creating " + names.length + (names.length === 1 ? " nameplate…" : " nameplates…"));
   try {
-    const blob = await buildDeck(noLogo && !customDesign && plainBuffer ? plainBuffer : templateBuffer, names, extras, noLogo);
+    const blob = await buildDeck(templateBuffer, names, extras, noLogo);
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement("a"), { href: url, download: "Nameplates_final.pptx" });
     document.body.appendChild(a); a.click(); a.remove();
@@ -334,7 +336,6 @@ fetch("Nameplates_FEPS.pptx")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
   .then(b => loadTemplate(new File([b], "Nameplates_FEPS.pptx"), true))
   .catch(() => { els.note.textContent = "The built-in design could not be loaded. Open “Use a different nameplate design” below and choose your template file."; });
-fetch("Nameplates.pptx").then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => { plainBuffer = b; }).catch(() => {});   // optional: without it, the logos are removed from the FEPS design
 
 $("example").addEventListener("click", () => {
   els.names.value = "Andreas SCHIEDER\n* Ania Skrzypek, Director for Research and Training, FEPS\n- Anna Pacześniak, Wrocław University";

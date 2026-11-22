@@ -123,11 +123,11 @@ function refresh() {
     copy.addEventListener("click", () => copyText(href, () => { copy.textContent = "Copied"; setTimeout(() => copy.textContent = "Copy the link", 1500); }));
     acts.append(open, copy); li.append(b, acts); return li;
   }));
-  const parts = [];
-  if ($("chkG").checked) parts.push('<a href="' + attr(L.google) + '" target="_blank">Add to Google Calendar</a>');
-  if ($("chkO365").checked) parts.push('<a href="' + attr(L.o365) + '" target="_blank">Add to Outlook</a>');
-  if ($("chkOL").checked) parts.push('<a href="' + attr(L.outlook) + '" target="_blank">Add to Outlook.com</a>');
-  if ($("chkIcs").checked && $("icsUrl").value.trim()) parts.push('<a href="' + attr($("icsUrl").value.trim()) + '" target="_blank">Add to Apple Calendar</a>');
+  const parts = [], a = (href, text) => '<a href="' + attr(href) + '" target="_blank" rel="noopener">' + text + "</a>";
+  if ($("chkG").checked) parts.push(a(L.google, "Add to Google Calendar"));
+  if ($("chkO365").checked) parts.push(a(L.o365, "Add to Outlook"));
+  if ($("chkOL").checked) parts.push(a(L.outlook, "Add to Outlook.com"));
+  if ($("chkIcs").checked && $("icsUrl").value.trim()) parts.push(a($("icsUrl").value.trim(), "Add to Apple Calendar"));
   $("snippet").value = parts.length ? '<p style="text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;">\n' + parts.join(" &nbsp;|&nbsp;\n") + "\n</p>" : "";
 }
 
