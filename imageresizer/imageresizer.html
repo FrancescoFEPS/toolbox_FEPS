@@ -41,9 +41,9 @@ legend{padding:0;margin:0 0 6px;font-weight:600;font-size:.95rem}
     <div class="steps">
       <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
         <h2>Choose your image</h2>
-        <p>A JPG, PNG, WebP, GIF, BMP, AVIF, SVG or HEIC (iPhone) image.</p>
+        <p>A JPG, PNG or WebP image.</p>
         <label class="drop" id="drop">
-          <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif,image/svg+xml,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,.svg,.heic,.heif">
+          <input type="file" id="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp">
           <span class="main-line" id="fileMain">Choose an image</span>
           <span class="sub-line" id="fileSub">or drop it here</span>
         </label>
@@ -104,11 +104,8 @@ legend{padding:0;margin:0 0 6px;font-weight:600;font-size:.95rem}
     <details><summary>Which file type should I choose?</summary><div><p>JPG for photos, PNG for logos or images with text and transparency, WebP if the place where you use it accepts it. For JPG and WebP, a quality around 80 to 85% is usually a good balance between sharpness and weight.</p></div></details>
     <details><summary>I changed a PNG with a transparent background into a JPG: why is it white now?</summary><div><p>JPG cannot be transparent, so the transparent parts are filled with white. Keep PNG or choose WebP if you need to keep the transparency.</p></div></details>
     <details><summary>The preview says the image is too small</summary><div><p>When the original is smaller than the format, it has to be enlarged and may look blurry. Use a larger original, or a smaller format.</p></div></details>
-    <details><summary>What happens with an animated GIF?</summary><div><p>Only the first image of the GIF is used, and the result is a normal still image (JPG, PNG or WebP). The animation is lost.</p></div></details>
-    <details><summary>My AVIF image is not accepted</summary><div><p>AVIF is read by your browser, so it only works in recent versions of Chrome, Edge, Firefox and Safari. If it does not open, try another browser.</p></div></details>
-    <details><summary>What happens with an SVG drawing?</summary><div><p>The drawing is turned into a normal image, large enough to stay sharp (at least 1600 px on its long side), and you can then resize it like any other image. Choose PNG to keep a transparent background. The SVG file must have a width and a height.</p></div></details>
-    <details><summary>Can I add my own formats to the list?</summary><div><p>Yes: they are listed at the top of <code>imageresizer.js</code> and can be edited there, or you can just type any width and height.</p></div></details>
-    <details><summary>Can I use a photo from an iPhone (HEIC)?</summary><div><p>Yes. The photo is first converted inside your browser, which can take a few seconds for a large photo, and then you can resize it like any other image. If the conversion fails, export the photo as JPG on your iPhone or Mac and use that file.</p></div></details>
+    <details><summary>Can I add my own formats to the list?</summary><div><p>Not from this page. You can always choose “Custom size” and type any width and height. If a format is used often, ask the person who looks after the toolbox to add it to the list.</p></div></details>
+    <details><summary>My iPhone photo (HEIC) is not accepted</summary><div><p>Only JPG, PNG and WebP are supported. On a Mac or iPhone you can export the photo as JPG first.</p></div></details>
   </section>
 
   <footer>Everything runs in your browser: your image never leaves your computer.</footer>
