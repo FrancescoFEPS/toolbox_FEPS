@@ -15,6 +15,7 @@ On the home page the tools are grouped by type, with a title per group.
 | Events | Add to calendar | `calendar/` | Makes an .ics file and Google / Outlook "add to calendar" links for an event, plus ready-to-paste HTML for Sarbacane. |
 | Newsletter and website | Sarbacane code cleaner | `sarbacane/` | Applies 4 fixed replacements to the raw HTML of a Sarbacane newsletter. |
 | Newsletter and website | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
+| Newsletter and website | PDF text cleaner | `pdftext/` | Glues back the lines of a text copied from a PDF, so it can be pasted in WordPress without broken sentences. |
 | Images | Image resizer | `imageresizer/` | Crops, resizes, compresses or changes the format of an image for the website, the newsletter or social media. |
 | Images | Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
 | Images | Video to GIF | `gifmaker/` | Turns a short part of a video into an animated GIF. |
@@ -43,6 +44,7 @@ registration/  registration.html + registration.js  (+ Registration_template.doc
 sarbacane/     sarbacane.html + sarbacane.js
 imageresizer/  imageresizer.html + imageresizer.js
 qrcode/        qrcode.html + qrcode.js  (+ logo_FEPS.png)
+pdftext/       pdftext.html + pdftext.js
 calendar/      calendar.html + calendar.js
 cleaner/       cleaner.html + cleaner.js
 pdf/           pdf.html + pdf.js
@@ -94,6 +96,15 @@ Rules of the structure:
 - The logo is placed in the bottom-right corner by default (or in the middle), at 10 to 25% of the code width, and two sliders ("Move up", "Sideways") fine-tune its position. By default the code squares are removed only where the visible part of the logo (plus one square around it) is, so the transparent parts of the logo are respected; "Plain square" clears a rectangle instead. A warning appears if the logo hides too much of the code.
 - Colours and image size (about 500 to 4000 px) are adjustable, with a low-contrast warning.
 - Output: PNG, or SVG (vector, for print, logo embedded).
+
+**PDF text cleaner**
+- The user pastes text copied from a PDF. The result is updated as they type and copied with one button, to be pasted in WordPress. Only line breaks and spaces change: the words are never touched.
+- Lines are cleaned (spaces trimmed, double spaces removed) and grouped in blocks separated by blank lines. Inside a block, lines are glued with one space. Blocks stay separate paragraphs, separated by a blank line in the result.
+- A line that starts with a bullet (•, ▪, ◦, ●, ■, ►, ‣) or with a dash followed by a space always starts a new paragraph.
+- Option "Repair words cut with a hyphen" (on by default): a line ending with a letter and a hyphen, followed by a line starting with a lowercase letter, is glued without the hyphen ("politi-" + "cal" gives "political"). A real hyphenated word cut at the hyphen loses it (explained on the page).
+- Option "Start a new paragraph after a short line that ends a sentence" (on by default): inside a block, a line shorter than 70% of the longest line of the block and ending with . ! ? … : ” " » ) ] starts a new paragraph. It is for PDFs with no blank line between paragraphs.
+- Always on: ligature characters (ﬀ ﬁ ﬂ ﬃ ﬄ ﬅ ﬆ) become normal letters, soft hyphens and form feeds are removed, non-breaking spaces become normal spaces.
+- Not handled: page numbers, headers and footers copied with the text (the page tells the user to delete them by hand).
 
 **Add to calendar**
 - One event form: title, time zone of the event (Brussels by default), start date and time (or "All day"), optional end (empty = one hour, or one day if all day), place or online link, description and event page link.

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF text cleaner</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+main{display:block;max-width:760px}
+textarea.code{min-height:220px;font:15px/1.5 system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:0 0 8px}
+.check input{margin-top:5px;accent-color:var(--red)}
+.check small{display:block;color:var(--muted)}
+#report{margin:10px 0 0;padding:0;list-style:none;font-size:.92rem}
+#report li{padding:2px 0}
+.faq{max-width:760px}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>PDF text cleaner</h1>
+    <p class="lede">Paste text copied from a PDF and get it back without the broken lines, ready to paste in WordPress.</p>
+    <p class="how">How it works: a PDF saves every line of a text on its own, so a copied text is cut in the middle of sentences. The page glues the lines back together and keeps your real paragraphs. It does not change your words.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Paste the text</h2>
+        <p>Select the text in your PDF, copy it, and paste it here.</p>
+        <label class="sr" for="inputText">Text copied from a PDF</label>
+        <textarea class="code" id="inputText" spellcheck="false" placeholder="Paste the text here…"></textarea>
+        <button type="button" class="linkbtn" id="example">Fill in an example</button>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Check the options</h2>
+        <label class="check"><input type="checkbox" id="oHyphen" checked><span>Repair words cut with a hyphen at the end of a line<small>“politi-” then “cal” becomes “political”. A real hyphenated word cut at the end of a line (“well-” then “known”) loses its hyphen: check the result.</small></span></label>
+        <label class="check"><input type="checkbox" id="oShort" checked><span>Start a new paragraph after a short line that ends a sentence<small>Useful when your PDF has no blank line between paragraphs. Untick it if paragraphs are cut in the wrong places.</small></span></label>
+        <p id="status" role="status" aria-live="polite"></p>
+        <ul id="report"></ul>
+        <details>
+          <summary>What exactly does it change?</summary>
+          <div>
+            <ul>
+              <li>Lines of the same paragraph are joined with a single space.</li>
+              <li>A blank line in your text stays a paragraph break. Lines that start with a bullet (•, –) stay on their own.</li>
+              <li>Double spaces and spaces at the start or end of a line are removed.</li>
+              <li>Joined letters such as ﬁ and ﬂ become fi and fl, and invisible soft hyphens are removed.</li>
+            </ul>
+          </div>
+        </details>
+      </div></section>
+
+      <section class="step" id="step3"><div class="num" aria-hidden="true"><span>3</span></div><div>
+        <h2>Copy the result</h2>
+        <label class="sr" for="outputText">Cleaned text</label>
+        <textarea class="code" id="outputText" readonly spellcheck="false" placeholder="The cleaned text will appear here."></textarea>
+        <div class="actions"><button type="button" class="go" id="copy" disabled>Copy the cleaned text</button><span id="copied" role="status" aria-live="polite"></span></div>
+        <p class="hint">Then paste it in WordPress. If a PDF title, page number or footer was copied with the text, delete it by hand.</p>
+      </div></section>
+    </div>
+  </main>
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Why are my sentences cut when I copy from a PDF?</summary><div><p>A PDF is made to be printed, not to be edited: it stores each line of text separately, with no notion of a sentence. When you copy, you get a line break at the end of each line.</p></div></details>
+    <details><summary>My paragraphs are all stuck together</summary><div><p>Your PDF probably has no blank line between paragraphs. Make sure “Start a new paragraph after a short line that ends a sentence” is ticked. If it still fails, add a blank line by hand where a paragraph should start, in the box in step 1.</p></div></details>
+    <details><summary>My paragraphs are cut in the wrong places</summary><div><p>Untick “Start a new paragraph after a short line that ends a sentence”. Only blank lines will then separate paragraphs.</p></div></details>
+    <details><summary>A word has lost its hyphen</summary><div><p>When a word like “well-known” was cut exactly at its hyphen at the end of a line, the page cannot tell it from a word cut in two. Put the hyphen back by hand, or untick the hyphen option and repair the cut words yourself.</p></div></details>
+    <details><summary>Does it change my text?</summary><div><p>No. It only changes line breaks, spaces and the few things listed under “What exactly does it change?”.</p></div></details>
+    <details><summary>Is my text sent anywhere?</summary><div><p>No. Everything happens inside your browser and nothing is sent online.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: your text never leaves your computer.</footer>
+</div>
+<script src="pdftext.js"></script>
+</body>
+</html>

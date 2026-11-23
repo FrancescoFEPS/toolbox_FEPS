@@ -2,6 +2,15 @@
 
 Newest first. One entry per delivery. Old entries are kept as a history.
 
+## [1.0.4] - 2026-11-23
+
+### Added
+- **PDF text cleaner** (`pdftext/pdftext.html`, `pdftext/pdftext.js`): new tool in the group "Newsletter and website". Glues back the lines of a text copied from a PDF, keeps the real paragraphs, repairs words cut with a hyphen, turns joined letters (ﬁ, ﬂ) back into normal letters, and has a "Copy" button for WordPress.
+- **Home page** (`index.html`): new "PDF text cleaner" card, in the Newsletter and website group.
+
+### Changed
+- **README** (`README.md`): the tool is added to the table, the structure and "How each tool works".
+
 ## [1.0.3] - 2026-11-22
 
 ### Fixed
