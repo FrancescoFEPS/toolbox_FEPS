@@ -16,7 +16,6 @@ On the home page the tools are grouped by type, with a title per group.
 | Newsletter and website | Sarbacane code cleaner | `sarbacane/` | Applies 4 fixed replacements to the raw HTML of a Sarbacane newsletter. |
 | Newsletter and website | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
 | Newsletter and website | PDF text cleaner | `pdftext/` | Glues back the lines of a text copied from a PDF, so it can be pasted in WordPress without broken sentences. |
-| Newsletter and website | PDF links extractor | `pdflinks/` | Lists all the clickable links of a PDF, complete, even those cut over two lines on the page. |
 | Images | Image resizer | `imageresizer/` | Crops, resizes, compresses or changes the format of an image for the website, the newsletter or social media. |
 | Images | Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
 | Images | Video to GIF | `gifmaker/` | Turns a short part of a video into an animated GIF. |
@@ -46,7 +45,6 @@ sarbacane/     sarbacane.html + sarbacane.js
 imageresizer/  imageresizer.html + imageresizer.js
 qrcode/        qrcode.html + qrcode.js  (+ logo_FEPS.png)
 pdftext/       pdftext.html + pdftext.js
-pdflinks/      pdflinks.html + pdflinks.js
 calendar/      calendar.html + calendar.js
 cleaner/       cleaner.html + cleaner.js
 pdf/           pdf.html + pdf.js
@@ -107,13 +105,6 @@ Rules of the structure:
 - Option "Start a new paragraph after a short line that ends a sentence" (on by default): inside a block, a line shorter than 70% of the longest line of the block and ending with . ! ? … : ” " » ) ] starts a new paragraph. It is for PDFs with no blank line between paragraphs.
 - Always on: ligature characters (ﬀ ﬁ ﬂ ﬃ ﬄ ﬅ ﬆ) become normal letters, soft hyphens and form feeds are removed, non-breaking spaces become normal spaces.
 - Not handled: page numbers, headers and footers copied with the text (the page tells the user to delete them by hand).
-
-**PDF links extractor**
-- Uses `assets/pdf-lib.min.js` (script order: pdf-lib, then `pdflinks.js`; no JSZip). The user chooses one PDF; the page reads the link annotations of every page (`/Subtype /Link` with a `/URI` action). Such a link holds its full address in one piece, so a link printed over two lines on the page comes out complete.
-- Internal links (to another page of the PDF) are ignored. Spaces and invisible characters inside an address are removed.
-- Result: one row per link with the page number(s), a "Copy" button and an "Open" button (web addresses only, `rel="noopener noreferrer"`), and "Copy all the links" (one per line). "Show each link only once" (on by default) groups identical links with all their pages.
-- Limit: links that are only written as text, not clickable, are not found: that would need a text reader such as pdf.js, which is not in the repository. The page then says so. The words carrying the link are not read, only the address and the page.
-- Password-protected PDFs are refused with a clear message.
 
 **Add to calendar**
 - One event form: title, time zone of the event (Brussels by default), start date and time (or "All day"), optional end (empty = one hour, or one day if all day), place or online link, description and event page link.

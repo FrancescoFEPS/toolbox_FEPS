@@ -1,19 +1,10 @@
 # Changelog
 
-## [1.0.5] - 2026-11-23
-
-### Added
-- **PDF links extractor** (`pdflinks/pdflinks.html`, `pdflinks/pdflinks.js`): new tool in the group "Newsletter and website". The user chooses a PDF and gets all its clickable links, complete even when they are cut over two lines on the page, with their page numbers, "Copy" and "Open" buttons, "Copy all the links", and an option to show each link only once. Uses `assets/pdf-lib.min.js`. Links written only as text (not clickable) are not found.
-- **Home page** (`index.html`): new "PDF links extractor" card, in the Newsletter and website group.
-
 ## [1.0.4] - 2026-11-23
 
 ### Added
 - **PDF text cleaner** (`pdftext/pdftext.html`, `pdftext/pdftext.js`): new tool in the group "Newsletter and website". Glues back the lines of a text copied from a PDF, keeps the real paragraphs, repairs words cut with a hyphen, turns joined letters (ﬁ, ﬂ) back into normal letters, and has a "Copy" button for WordPress.
 - **Home page** (`index.html`): new "PDF text cleaner" card, in the Newsletter and website group.
-
-### Changed
-- **README** (`README.md`): the tool is added to the table, the structure and "How each tool works".
 
 ## [1.0.3] - 2026-11-22
 
@@ -32,10 +23,6 @@ Fixes found while reading the code. No change to the look of any tool.
 - **Add to calendar** (`calendar/calendar.js`): the links in the Sarbacane code now have `rel="noopener"`.
 - **Image resizer** (`imageresizer/imageresizer.html`): the FAQ about adding formats no longer asks colleagues to edit a JavaScript file.
 - **README**: `assets/people.js` added to the structure; the Registration section no longer mentions the STATUS filter (removed on purpose: people are removed by hand with "Remove"); notes updated for the changes above.
-
-### Changed
-- **README** (`README.md`): brought up to date with everything that exists: Video to GIF and Flickr link maker (tables, structure, how they work), `assets/gif.js` and `assets/heic2any.min.js`, the new input formats of the Image resizer (GIF, BMP, AVIF, SVG, HEIC), and details missing for Nameplates, Registration, List cleaner, QR code and Blur. A short section explains how README and CHANGELOG are kept up to date.
-- **Changelog** (`CHANGELOG.md`): the entry of 2026-11-22 now follows the version logic (Added / Changed / Fixed). No old entry was removed.
 
 Not changed on purpose: the Sarbacane cleaner, and the size limit of the Image resizer (large images are needed for Canva).
 
