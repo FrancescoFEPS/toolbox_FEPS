@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF links extractor</title>
+<link rel="icon" type="image/png" sizes="64x64" href="../favicon/favicon.png">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/pdf-lib.min.js"></script>
+<style>
+main{display:block;max-width:760px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:0 0 8px}
+.check input{margin-top:5px;accent-color:var(--red)}
+.check small{display:block;color:var(--muted)}
+.sumline{margin:10px 0 0;font-weight:600}
+.notice{margin:12px 0 0;padding:12px 14px;background:var(--tint);border-radius:var(--r);font-size:.95rem}
+#list{padding:0;margin:12px 0 0;list-style:none;max-height:none;overflow:visible;background:none;border:0;display:grid;gap:8px}
+#list:empty::before{content:"The links will be listed here.";display:block;margin:0;padding:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+#list li{display:grid;gap:6px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+#list li:last-child{border-bottom:1px solid var(--line)}
+.url{font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.pg{font-size:.9rem;color:var(--muted)}
+.acts{display:flex;gap:10px}
+.acts a,.acts button{font:inherit;font-size:.9rem;padding:4px 12px;border:1px solid #8f98a6;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;text-decoration:none}
+.acts a:hover,.acts button:hover{background:var(--tint);border-color:var(--red)}
+button.alt{font:inherit;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:var(--r);padding:12px 22px;cursor:pointer}
+button.alt:hover:not(:disabled){background:var(--tint);border-color:var(--red)}button.alt:disabled{color:#8f98a6;border-color:#b9bfc9;cursor:not-allowed}
+.faq{max-width:760px}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+  <header>
+    <p class="back"><a href="../">Back to all tools</a></p>
+    <h1>PDF links extractor</h1>
+    <p class="lede">Choose a PDF and get all the links it contains, complete, even when they are cut over two lines on the page.</p>
+    <p class="how">How it works: a clickable link in a PDF is stored whole in the file, whatever the way it is printed on the page. The page reads these links and lists them, ready to copy.</p>
+  </header>
+  <main>
+    <div class="steps">
+      <section class="step" id="step1"><div class="num" aria-hidden="true"><span>1</span></div><div>
+        <h2>Choose your PDF</h2>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="application/pdf,.pdf">
+          <span class="main-line" id="fileMain">Choose a PDF</span>
+          <span class="sub-line" id="fileSub">or drop it here</span>
+        </label>
+        <p class="sumline" id="summary"></p>
+        <p id="status" role="status" aria-live="polite"></p>
+        <p class="notice" id="none" hidden>No clickable link was found. The links of this PDF are probably only written as text, and this tool cannot read them. You can test it: in the PDF, click on one of the links. If nothing happens, it is plain text.</p>
+      </div></section>
+
+      <section class="step" id="step2"><div class="num" aria-hidden="true"><span>2</span></div><div>
+        <h2>Copy the links</h2>
+        <label class="check"><input type="checkbox" id="once" checked><span>Show each link only once<small>If the same link appears several times, it is listed once, with all its pages.</small></span></label>
+        <div class="actions"><button type="button" class="go" id="copyAll" disabled>Copy all the links</button><span id="copied" role="status" aria-live="polite"></span></div>
+        <div class="listhead"><h2>Links found</h2><span id="count"></span></div>
+        <ul id="list"></ul>
+        <p class="hint">“Copy all the links” gives one link per line. Click “Open” to test a link before you use it.</p>
+      </div></section>
+    </div>
+  </main>
+  <section class="faq" aria-label="Questions and answers">
+    <h2>Questions</h2>
+    <details><summary>Why are the links complete here, when they are cut when I copy the text?</summary><div><p>When you copy text from a PDF, you get the text as it is printed, line by line. But a clickable link also holds its full address inside the file, in one piece. This page reads that address, so the way the text is cut over lines does not matter.</p></div></details>
+    <details><summary>The page says no clickable link was found</summary><div><p>The addresses in your PDF are probably only text, not real links. Click on one in the PDF: if nothing opens, it is plain text. This tool cannot read them.</p></div></details>
+    <details><summary>The text of the link is not shown</summary><div><p>Only the address is listed, with the page where it is. The words that carry the link (for example “read more”) are not read. Use the page number to find them.</p></div></details>
+    <details><summary>Some links are missing</summary><div><p>Links that go to another page of the same PDF are left out on purpose, as they are not web addresses. Links drawn inside an image are found only if the PDF makes them clickable.</p></div></details>
+    <details><summary>The page says the PDF could not be read</summary><div><p>The file may be protected with a password, or damaged. Open it, remove the protection (or print it to a new PDF), and try again.</p></div></details>
+    <details><summary>Is my PDF uploaded anywhere?</summary><div><p>No. Everything happens inside your browser, on your computer.</p></div></details>
+  </section>
+
+  <footer>Everything runs in your browser: your PDF never leaves your computer.</footer>
+</div>
+<script src="pdflinks.js"></script>
+</body>
+</html>

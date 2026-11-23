@@ -1,6 +1,10 @@
 # Changelog
 
-Newest first. One entry per delivery. Old entries are kept as a history.
+## [1.0.5] - 2026-11-23
+
+### Added
+- **PDF links extractor** (`pdflinks/pdflinks.html`, `pdflinks/pdflinks.js`): new tool in the group "Newsletter and website". The user chooses a PDF and gets all its clickable links, complete even when they are cut over two lines on the page, with their page numbers, "Copy" and "Open" buttons, "Copy all the links", and an option to show each link only once. Uses `assets/pdf-lib.min.js`. Links written only as text (not clickable) are not found.
+- **Home page** (`index.html`): new "PDF links extractor" card, in the Newsletter and website group.
 
 ## [1.0.4] - 2026-11-23
 
