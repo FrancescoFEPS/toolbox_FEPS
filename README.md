@@ -16,12 +16,14 @@ On the home page the tools are grouped by type, with a title per group.
 | Newsletter and website | Sarbacane code cleaner | `sarbacane/` | Applies 4 fixed replacements to the raw HTML of a Sarbacane newsletter. |
 | Newsletter and website | QR code maker | `qrcode/` | Turns a link into a QR code, with an optional logo in the middle, as PNG or SVG. |
 | Newsletter and website | PDF text cleaner | `pdftext/` | Glues back the lines of a text copied from a PDF, so it can be pasted in WordPress without broken sentences. |
+| Newsletter and website | PDF links extractor | `pdflinks/` | Lists all the clickable links of a PDF, complete, even those cut over two lines on the page. |
 | Images | Image resizer | `imageresizer/` | Crops, resizes, compresses or changes the format of an image for the website, the newsletter or social media. |
 | Images | Blur and hide | `blur/` | Pixelates, blurs or blacks out parts of an image, and removes its hidden photo data. |
 | Images | Video to GIF | `gifmaker/` | Turns a short part of a video into an animated GIF. |
 | Images | Flickr link maker | `flickr/` | Makes the code of a 🔗 link to paste in a Flickr description. |
 | Lists and documents | List cleaner | `cleaner/` | Cleans an Excel/CSV list (spaces, capitals, empty rows, duplicates, wrong emails, comparison with another list). |
 | Lists and documents | PDF merge and split | `pdf/` | Merges PDFs, takes pages out of a PDF, or splits a PDF into several files. |
+| Lists and documents | PDF to JPG | `pdfjpeg/` | Turns the pages of a PDF into JPG images (one JPG, or a zip with one JPG per page). |
 
 Set aside for now: **Quote visuals** (`quotecard/`). It was removed from the repository and from the home page until a better style is found.
 
@@ -37,6 +39,8 @@ assets/
   people.js                shared reader for people (name, last name, organisation) from a table (needs table.js)
   gif.js                   small animated GIF encoder (no library), used by Video to GIF
   pdf-lib.min.js           pdf-lib 1.17.1 (MIT), used by the PDF tool
+  pdf.min.mjs              pdf.js 6.2.108, legacy build (Apache 2.0), used by PDF to JPG; loaded on demand as a module
+  pdf.worker.min.mjs       the worker of pdf.js (same version), loaded by pdf.min.mjs
   heic2any.min.js          converts iPhone photos (HEIC) to PNG, used by the Image resizer (loaded only when needed)
 favicon/favicon.png
 nameplates/    nameplates.html + nameplates.js      (+ Nameplates_FEPS.pptx)
@@ -45,9 +49,11 @@ sarbacane/     sarbacane.html + sarbacane.js
 imageresizer/  imageresizer.html + imageresizer.js
 qrcode/        qrcode.html + qrcode.js  (+ logo_FEPS.png)
 pdftext/       pdftext.html + pdftext.js
+pdflinks/      pdflinks.html + pdflinks.js
 calendar/      calendar.html + calendar.js
 cleaner/       cleaner.html + cleaner.js
 pdf/           pdf.html + pdf.js
+pdfjpeg/       pdfjpeg.html + pdfjpeg.js
 blur/          blur.html + blur.js
 gifmaker/      gifmaker.html + gifmaker.js
 flickr/        flickr.html + flickr.js
@@ -106,6 +112,13 @@ Rules of the structure:
 - Always on: ligature characters (ﬀ ﬁ ﬂ ﬃ ﬄ ﬅ ﬆ) become normal letters, soft hyphens and form feeds are removed, non-breaking spaces become normal spaces.
 - Not handled: page numbers, headers and footers copied with the text (the page tells the user to delete them by hand).
 
+**PDF links extractor**
+- Uses `assets/pdf-lib.min.js` (script order: pdf-lib, then `pdflinks.js`; no JSZip). The user chooses one PDF; the page reads the link annotations of every page (`/Subtype /Link` with a `/URI` action). Such a link holds its full address in one piece, so a link printed over two lines on the page comes out complete.
+- Internal links (to another page of the PDF) are ignored. Spaces and invisible characters inside an address are removed.
+- Result: one row per link with the page number(s), a "Copy" button and an "Open" button (web addresses only, `rel="noopener noreferrer"`), and "Copy all the links" (one per line). "Show each link only once" (on by default) groups identical links with all their pages.
+- Limit: links that are only written as text, not clickable, are not found: that would need a text reader such as pdf.js, which is not in the repository. The page then says so. The words carrying the link are not read, only the address and the page.
+- Password-protected PDFs are refused with a clear message.
+
 **Add to calendar**
 - One event form: title, time zone of the event (Brussels by default), start date and time (or "All day"), optional end (empty = one hour, or one day if all day), place or online link, description and event page link.
 - Times are converted from the chosen time zone to UTC with `Intl`, so summer and winter time are handled. The .ics file and the Google link use UTC times; every person then sees the event at the right time in their own calendar.
@@ -123,6 +136,13 @@ Rules of the structure:
 **PDF merge and split**
 - Uses `assets/pdf-lib.min.js`. Three actions: merge (order chosen with Up/Down), take pages out (ranges such as `1-3, 7, 10-`, in the order typed), split every N pages (zip of PDFs named `<file>_p1-2.pdf`).
 - Password-protected PDFs are refused with a clear message. Pages are copied as they are (no compression); links, bookmarks and forms may be lost.
+
+**PDF to JPG**
+- Uses pdf.js (`assets/pdf.min.mjs` and `assets/pdf.worker.min.mjs`, legacy build for older browsers) to draw each page on a canvas, and JSZip for the zip file. pdf.js is a module, so `pdfjpeg.js` loads it with `import()` only when a PDF is chosen; the page must be opened from a server (like the templates), not by double-clicking the file.
+- The user chooses one PDF, all pages or some pages (ranges such as `1-3, 7, 10-`), a sharpness (Screen 96, Standard 150, High 300 dpi) and a JPG quality (60 to 100%, 90 by default). The first page is shown as a preview.
+- Output: one page gives `<file>_p1.jpg`; several pages give `<file>_jpg.zip` with `<file>_p01.jpg`, `<file>_p02.jpg`... (page numbers padded to the number of digits of the page total). Pages are drawn on a white background, because a JPG cannot be transparent.
+- A page of more than 50 million pixels is reduced to fit in the browser, and the page tells the user. Password-protected PDFs are refused with a clear message.
+- Not shipped: the pdf.js standard fonts and CMaps. A PDF without its own fonts is drawn with similar fonts of the browser. If this becomes a problem, add the `standard_fonts` and `cmaps` folders of pdfjs-dist to `assets/` and pass `standardFontDataUrl` and `cMapUrl` to `getDocument`.
 
 **Blur and hide**
 - Images only (JPG, PNG, WebP). The user drags rectangles on the image (mouse or finger); each is pixelated, blurred or covered with a black box. The result is a flat new image, so the hidden pixels cannot be recovered, and the original's metadata (EXIF, GPS) is not copied.
@@ -169,3 +189,4 @@ Do not open the pages by double-clicking the files: the browser then blocks the 
 
 - The tools handle personal data (registrations, names): it stays in the browser tab and is gone when the page is closed. The Word and PowerPoint files created are saved on the user's computer, so they should be kept safely and deleted when no longer needed.
 - JSZip 3.10.1 is MIT / GPLv3 dual licensed; its licence notice is at the top of `assets/jszip.min.js`.
+- pdf.js (Mozilla) is Apache 2.0 licensed; its licence notice is at the top of `assets/pdf.min.mjs`.
