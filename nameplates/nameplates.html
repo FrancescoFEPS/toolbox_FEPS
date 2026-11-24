@@ -10,6 +10,9 @@
 <style>
 .check{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-weight:600}
 .check input{margin-top:5px;accent-color:var(--red)}
+.sizebox{display:grid;gap:4px;margin:0 0 6px;font-weight:600;font-size:.95rem}
+.sizebox select{font:inherit;font-weight:400;padding:10px 12px;border:2px solid #8f98a6;border-radius:var(--r);background:#fff;color:var(--ink);max-width:24rem}
+.sizebox select:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-color:var(--ink)}
 </style>
 <script src="../assets/jszip.min.js"></script>
 </head>
@@ -77,6 +80,10 @@
         <div class="num" aria-hidden="true"><span>3</span></div>
         <div>
           <h2>Create your file</h2>
+          <label class="sizebox">Size of the names
+            <select id="size"><option value="1" selected>Normal (as in the design)</option><option value="1.25">Larger (25% bigger)</option><option value="1.5">Much larger (50% bigger)</option></select>
+          </label>
+          <p class="hint" style="margin:0 0 14px">Long names are made smaller automatically, so that they stay on one line. They are never made smaller than the normal size.</p>
           <p>The button turns on as soon as you have pasted at least one name.</p>
           <button type="button" class="go" id="go" disabled>Create nameplates</button>
           <p id="status" role="status" aria-live="polite"></p>

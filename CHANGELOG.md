@@ -1,5 +1,12 @@
 # Changelog
 
+Newest first. One entry per delivery. Old entries are kept as a history.
+
+## [1.0.7] - 2026-11-23
+
+### Added
+- **Nameplates – size of the names** (`nameplates/nameplates.html`, `nameplates/nameplates.js`): new choice in step 3: Normal (as in the design), Larger (25% bigger) or Much larger (50% bigger). A long name is made smaller automatically so that it stays on one line, but never below the normal size. The preview follows the choice. "Normal" gives the same file as before.
+
 ## [1.0.6] - 2026-11-23
 
 ### Added

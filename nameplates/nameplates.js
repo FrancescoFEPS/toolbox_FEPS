@@ -47,18 +47,37 @@ function listSlides(presXml, presRelsXml) {
 }
 
 /* Put `name` in every text box (the template has it twice: upright and upside down). */
-function setName(xml, name) {
+function setName(xml, name, fit = null) {
   const esc = escapeXml(name);
   return xml.replace(/<p:txBody>[\s\S]*?<\/p:txBody>/g, body => {
     if (![...body.matchAll(/<a:t(?:\s[^>]*)?>([\s\S]*?)<\/a:t>/g)].some(m => m[1].trim())) return body;
     let first = true;
-    return body.replace(/<a:t(\s[^>]*)?>[\s\S]*?<\/a:t>/g, (_, attrs) => {
+    const out = body.replace(/<a:t(\s[^>]*)?>[\s\S]*?<\/a:t>/g, (_, attrs) => {
       const text = first ? esc : "";
       first = false;
       return "<a:t" + (attrs || "") + ">" + text + "</a:t>";
     });
+    return fit ? out.replace(/\bsz="(\d+)"/g, (_, s) => 'sz="' + fit(+s, name) + '"') : out;
   });
 }
+
+/* Bigger names. `mult` = 1.25 or 1.5 times the size written in the template. A long name gets the largest size
+   that still fits on one line (90% of the slide width), but never less than the template's own size.
+   Returns null for "Normal": nothing changes then. Sizes are in hundredths of a point, as in PowerPoint. */
+function makeFit(mult, xml, slideW) {
+  if (!(mult > 1)) return null;
+  const face = (/<a:latin typeface="([^"+][^"]*)"/.exec(xml) || [, "Arial"])[1];
+  const bold = /<a:rPr\b[^>]*\sb="1"/.test(xml);
+  const c = document.createElement("canvas").getContext("2d");
+  c.font = (bold ? "bold " : "") + "100px " + JSON.stringify(face) + ", Arial, Helvetica, sans-serif";
+  const room = slideW / 12700 * 0.9;   // points
+  return (sz, name) => {
+    const base = sz / 100, w = c.measureText(name).width / 100;   // width of the name for a 1 pt font
+    const size = Math.max(base, Math.min(base * mult, w > 0 ? room / w : base * mult));
+    return Math.floor(size) * 100;
+  };
+}
+
 
 /* ---------- Logos ---------- */
 const REL_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
@@ -122,7 +141,7 @@ function addLogos(xml, rels, types, zip, extras, W, H) {
 
 const NOFOLDERS = { createFolders: false };
 
-async function buildDeck(buffer, names, extras = [], noLogo = false) {
+async function buildDeck(buffer, names, extras = [], noLogo = false, mult = 1) {
   const zip = await JSZip.loadAsync(buffer);
   const read = async p => {
     const f = zip.file(p);
@@ -170,7 +189,8 @@ async function buildDeck(buffer, names, extras = [], noLogo = false) {
   }
 
   // 2. First name goes into the model slide itself
-  zip.file(model.path, setName(modelXml, names[0]), NOFOLDERS);
+  const fit = makeFit(mult, modelXml, parseInt((/<p:sldSz[^>]*\bcx="(\d+)"/.exec(pres) || [, 10693400])[1], 10));
+  zip.file(model.path, setName(modelXml, names[0], fit), NOFOLDERS);
 
   // 3. One new slide per additional name, copied from the model
   const nums = Object.keys(zip.files).map(f => /^ppt\/slides\/slide(\d+)\.xml$/.exec(f)).filter(Boolean).map(m => +m[1]);
@@ -182,7 +202,7 @@ async function buildDeck(buffer, names, extras = [], noLogo = false) {
   let newIds = "", newRels = "", newTypes = "";
   for (const name of names.slice(1)) {
     const file = "ppt/slides/slide" + nextSlide + ".xml";
-    zip.file(file, setName(modelXml, name), NOFOLDERS);
+    zip.file(file, setName(modelXml, name, fit), NOFOLDERS);
     if (copyRels) zip.file(relsPathOf(file), copyRels, NOFOLDERS);
     newTypes += '<Override PartName="/' + file + '" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>';
     newRels += '<Relationship Id="rId' + nextRid + '" Type="' + model.rel.type + '" Target="slides/slide' + nextSlide + '.xml"/>';
@@ -231,6 +251,7 @@ function refreshButton() {
   $("step3").classList.toggle("ready", !!templateBuffer && hasNames);
 }
 
+const sizeMult = () => parseFloat($("size").value) || 1;
 function refreshNames() {
   const names = parseNames(els.names.value);
   els.list.replaceChildren(...names.map(n => Object.assign(document.createElement("li"), { textContent: n })));
@@ -239,7 +260,7 @@ function refreshNames() {
   for (const el of [els.top, els.bottom]) {
     el.textContent = shown;
     el.classList.toggle("placeholder", !names.length);
-    el.style.setProperty("--fs", Math.min(7.5, 100 / Math.max(shown.length, 1)) + "cqw");
+    el.style.setProperty("--fs", Math.min(7.5 * sizeMult(), 100 / Math.max(shown.length, 1)) + "cqw");
   }
   refreshButton();
 }
@@ -276,13 +297,14 @@ for (const ev of ["dragenter", "dragover"]) els.drop.addEventListener(ev, e => {
 for (const ev of ["dragleave", "drop"]) els.drop.addEventListener(ev, e => { e.preventDefault(); els.drop.classList.remove("over"); });
 els.drop.addEventListener("drop", e => loadTemplate(e.dataTransfer.files[0]));
 els.names.addEventListener("input", refreshNames);
+$("size").addEventListener("change", refreshNames);
 
 els.go.addEventListener("click", async () => {
   const names = parseNames(els.names.value), noLogo = $("noLogo").checked;
   els.go.disabled = true;
   setStatus("Creating " + names.length + (names.length === 1 ? " nameplate…" : " nameplates…"));
   try {
-    const blob = await buildDeck(templateBuffer, names, extras, noLogo);
+    const blob = await buildDeck(templateBuffer, names, extras, noLogo, sizeMult());
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement("a"), { href: url, download: "Nameplates_final.pptx" });
     document.body.appendChild(a); a.click(); a.remove();
