@@ -1,6 +1,12 @@
 # Changelog
 
-Newest first. One entry per delivery. Old entries are kept as a history.
+## [1.0.8] - 2026-11-26
+
+### Fixed
+- **Registration list** (`registration/registration.js`):
+  - Loaded both `Registration_template_FEPS.docx` (default, with FEPS logo) and `Registration_template.docx` (blank header when `"No logo at all (not even FEPS)"` is checked), switching automatically between the two templates.
+  - Fixed the `"Cannot read properties of null (reading 'async')"` error when building the Word document by safely resolving header, footer, and relationship XML parts inside the active `.docx` template.
+  - Improved Excel/CSV file loading and manual text box parsing with clear English status messages.
 
 ## [1.0.7] - 2026-11-23
 

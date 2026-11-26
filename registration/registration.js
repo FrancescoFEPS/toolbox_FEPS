@@ -5,7 +5,11 @@ const NOFOLDERS = { createFolders: false };
 const MAX_EXTRA = 5, BLANK_ROWS = 12, SMALL = 0.65;   // extra logos are 65% of the height of the FEPS logo
 /* Escapes text for XML and removes invisible control characters (Word would say the file needs repair). */
 const esc = s => String(s || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-let extras = [], people = [], templateBuf = null, warnings = [];
+let extras = [], people = [], templateFepsBuf = null, templateBlankBuf = null, warnings = [];
+
+function getActiveTemplateBuf() {
+  return ($("noLogo") && $("noLogo").checked) ? templateBlankBuf : templateFepsBuf;
+}
 
 function setStatus(t, k) {
   $("status").textContent = t || "";
@@ -13,10 +17,12 @@ function setStatus(t, k) {
 }
 
 function refreshButton() {
-  $("go").disabled = !(templateBuf && people.length);
+  const noLogo = $("noLogo") && $("noLogo").checked;
+  const activeTpl = getActiveTemplateBuf();
+  $("go").disabled = !(activeTpl && people.length);
   $("step1").classList.toggle("done", people.length > 0);
   $("step2").classList.toggle("done", ["evName", "evDate", "evPlace"].every(i => $(i).value.trim()));
-  $("step3").classList.toggle("done", extras.length > 0 || ($("noLogo") && $("noLogo").checked));
+  $("step3").classList.toggle("done", extras.length > 0 || noLogo);
   $("step4").classList.toggle("ready", !$("go").disabled);
 }
 
@@ -126,10 +132,11 @@ for (const i of ["evName", "evDate", "evPlace"]) {
 }
 if ($("noLogo")) {
   $("noLogo").addEventListener("change", () => {
-    if ($("logoBox")) $("logoBox").hidden = $("noLogo").checked;
+    const noLogo = $("noLogo").checked;
+    if ($("logoBox")) $("logoBox").hidden = noLogo;
     if ($("noLogoNote")) {
-      $("noLogoNote").textContent = $("noLogo").checked
-        ? "All logos (including FEPS) will be removed from the header."
+      $("noLogoNote").textContent = noLogo
+        ? "Using the blank template without any logo in the header."
         : "";
     }
     refreshButton();
@@ -255,11 +262,15 @@ function findPart(zip, candidates, pattern) {
 
 async function buildDoc() {
   warnings = [];
-  if (!templateBuf) {
-    throw new Error("The Word template is not loaded yet.");
+  const noLogo = $("noLogo") && $("noLogo").checked;
+  const activeTpl = getActiveTemplateBuf();
+  if (!activeTpl) {
+    throw new Error(noLogo
+      ? "The blank Word template (Registration_template.docx) is not loaded."
+      : "The FEPS Word template (Registration_template_FEPS.docx) is not loaded.");
   }
 
-  const zip = await JSZip.loadAsync(templateBuf);
+  const zip = await JSZip.loadAsync(activeTpl);
   const readOptional = async p => {
     if (!p || !zip.file(p)) return null;
     return zip.file(p).async("string");
@@ -321,7 +332,7 @@ async function buildDoc() {
   const table = open + head + people.map(p => fill([p.first, p.last, p.org])).join("") + "</w:tbl>" + PB + blankTbl + PB + blankTbl;
   zip.file(docPath, doc.replace(tbl, () => table), NOFOLDERS);
 
-  // Header: event name, date, location (+ extra logos next to the FEPS logo)
+  // Header: event name, date, location (+ extra logos next to the FEPS logo when using the FEPS template)
   const hdPath = findPart(zip, ["word/header2.xml", "word/header1.xml"], /^word\/header\d+\.xml$/i);
   let hd = await readOptional(hdPath);
   if (hd !== null) {
@@ -339,16 +350,12 @@ async function buildDoc() {
     put("<w:t>LOCATION</w:t>", "<w:t>" + esc($("evPlace").value.trim()) + "</w:t>", "[LOCATION]");
     put("<w:t>]</w:t>", "<w:t></w:t>", "[LOCATION]");
 
-    if ($("noLogo") && $("noLogo").checked) {
-      hd = hd.replace(/<w:drawing>[\s\S]*?<\/w:drawing>/g, "");
-    }
-
     const hdFileName = hdPath.split("/").pop();
     const relsPath = "word/_rels/" + hdFileName + ".rels";
     let rels = await readOptional(relsPath);
     let types = await readOptional("[Content_Types].xml");
 
-    if (extras.length) {
+    if (!noLogo && extras.length) {
       const drawMatch = /<w:drawing>[\s\S]*?<\/w:drawing>/.exec(hd);
       if (!drawMatch || !rels || !types) {
         warnings.push("extra logos in the header");
@@ -449,18 +456,26 @@ $("go").addEventListener("click", async () => {
   refreshButton();
 });
 
-fetch("Registration_template.docx")
-  .then(r => {
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    return r.arrayBuffer();
-  })
-  .then(b => {
-    templateBuf = b;
+const fetchTemplate = url => fetch(url).then(r => {
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.arrayBuffer();
+});
+
+Promise.allSettled([
+  fetchTemplate("Registration_template_FEPS.docx"),
+  fetchTemplate("Registration_template.docx")
+]).then(([fepsRes, blankRes]) => {
+  if (fepsRes.status === "fulfilled") templateFepsBuf = fepsRes.value;
+  if (blankRes.status === "fulfilled") templateBlankBuf = blankRes.value;
+
+  if (templateFepsBuf && templateBlankBuf) {
+    $("note").textContent = "Word templates loaded.";
+  } else if (templateFepsBuf || templateBlankBuf) {
     $("note").textContent = "Word template loaded.";
-    refreshButton();
-  })
-  .catch(() => {
-    $("note").textContent = "The Word template could not be loaded. Please open this page from the website, not from a downloaded file.";
-  });
+  } else {
+    $("note").textContent = "The Word templates could not be loaded. Please open this page from the website, not from a downloaded file.";
+  }
+  refreshButton();
+});
 
 render();
